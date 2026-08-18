@@ -66,7 +66,7 @@ def _connect_card() -> ui.UINode:
     )
 
 
-@ext.panel("make_connect", slot="right", title="Make.com", icon="🧩",
+@ext.panel("make_connect", slot="left", title="Make.com", icon="🧩",
            default_width=320, min_width=260, max_width=420)
 async def make_connect_panel(ctx, **kwargs) -> object:
     token, zone = await h._get_credentials(ctx)

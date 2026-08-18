@@ -1,0 +1,210 @@
+{
+  "manifest_schema_version": 3,
+  "sdk_version": "5.9.22",
+  "app_id": "make-com-connector",
+  "version": "0.1.0",
+  "name": "Make.com",
+  "description": "Connect your own Make.com account to view and run your automation scenarios directly from Webbee -- see scenario status, run one on demand, and control activation, all via your own Make API token.",
+  "icon": "icon.svg",
+  "actions_explicit": true,
+  "system": false,
+  "capabilities": [
+    "make-com-connector:read",
+    "make-com-connector:write"
+  ],
+  "tools": [
+    {
+      "name": "connect_make",
+      "description": "Connect Make.com by saving your own API token, after checking it actually works. Create the token in Make: avatar (bottom-left) -> Profile -> API tab -> Add token. The account's zone (eu1/eu2/us1/us2) is auto-detected -- you don't need to know it.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.provider.connected"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "api_token": {
+            "default": "",
+            "description": "Make.com API token -- create it in Make: avatar (bottom-left) -> Profile -> API tab -> Add token.",
+            "title": "Api Token",
+            "type": "string"
+          }
+        },
+        "title": "ConnectMakeParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "connected": {
+            "default": false,
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "title": "ProviderConnection",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.connect_make",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "disconnect_make",
+      "description": "Disconnect Make.com: deletes the saved API token and zone. Existing scenarios in your Make account are never touched.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.provider.disconnected"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {},
+        "title": "NoParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "connected": {
+            "default": false,
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "title": "ProviderConnection",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.disconnect_make",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "get_make_connection",
+      "description": "Check whether Make.com is currently connected (does not reveal the saved token).",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {},
+        "title": "NoParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "connected": {
+            "default": false,
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "title": "ProviderConnection",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    }
+  ],
+  "signals": [],
+  "schedules": [],
+  "required_scopes": [],
+  "icon_size_bytes": 425,
+  "webhooks": [],
+  "lifecycle": {
+    "on_install": false
+  },
+  "lifecycle_hooks": {},
+  "secrets": [
+    {
+      "name": "make_api_token",
+      "description": "Your own Make.com API token, from Make: avatar (bottom-left) -> Profile -> API tab -> Add token.",
+      "required": false,
+      "write_mode": "both",
+      "max_bytes": 512,
+      "scope": "app"
+    },
+    {
+      "name": "make_zone",
+      "description": "Auto-detected Make.com account zone (eu1/eu2/us1/us2) -- set automatically by connect_make, not entered manually.",
+      "required": false,
+      "write_mode": "both",
+      "max_bytes": 64,
+      "scope": "app"
+    }
+  ],
+  "panels": [
+    {
+      "panel_id": "make_connect",
+      "slot": "left",
+      "title": "Make.com",
+      "tree": {},
+      "icon": "🧩",
+      "refresh": "manual",
+      "center_overlay": false
+    },
+    {
+      "panel_id": "make_connect_help",
+      "slot": "center",
+      "title": "How to get a Make API token",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": true
+    }
+  ]
+}

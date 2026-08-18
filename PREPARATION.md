@@ -329,13 +329,14 @@ Imperal нет коннектора), сегодня не может это сд
 
 ## 12. План воплощения и live-критерии
 
-Публичный репозиторий: обязателен с первого push, секреты (тестовый
-Make API token и т.п.) — не коммитятся, проверка staged-файлов перед
-первым push обязательна.
+Публичный репозиторий: **создан 2026-08-18** —
+https://github.com/ivanco-bluebeeweb-com/make-com-connector (public, первый
+push сделан после ручной проверки staged-файлов на секреты — чисто, ключей/
+токенов в коде нет).
 
 | Срез | Проблема / flow | Panel location | Зависимости | Тесты | Live verified критерий | Статус |
 |---|---|---|---|---|---|---|
-| 1 | Подключение Make-аккаунта (API token) | Форма подключения коннектора | Make API v2 auth | connect/disconnect happy+invalid token | Реальный токен реального Make-аккаунта успешно подключается и сохраняется зашифрованно | `planned` |
+| 1 | Подключение Make-аккаунта (API token) | Форма подключения коннектора | Make API v2 auth | connect/disconnect happy+invalid token | Реальный токен реального Make-аккаунта успешно подключается и сохраняется зашифрованно | `implemented locally` |
 | 2 | `list_scenarios` — реальный список сценариев | Основной экран коннектора | Срез 1 | list happy/empty/paginated | Список в панели совпадает с тем, что видно в самом Make | `planned` |
 | 3 | `run_scenario` с explicit confirmation | Chat + панель, кнопка запуска | Срез 1-2 | run happy/error/paused-org | Запуск конкретного сценария в реальном Make-аккаунте, результат виден | `planned` |
 | 4 | `activate_scenario`/`deactivate_scenario` | Панель, toggle на карточке сценария | Срез 1-2 | happy/already-in-state | Реальное включение/выключение сценария подтверждено в самом Make UI | `planned` |

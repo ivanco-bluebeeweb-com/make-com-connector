@@ -77,6 +77,9 @@ async def connect_make(ctx, params: ConnectMakeParams) -> ActionResult:
     effects=["make.provider.disconnected"],
 )
 async def disconnect_make(ctx, params: NoParams) -> ActionResult:
+    """Deletes both stored secrets -- token and its discovered zone --
+    together, so a stale zone can never be paired with no token (or vice
+    versa) on the next connect attempt."""
     await ctx.secrets.delete("make_api_token")
     await ctx.secrets.delete("make_zone")
     return ActionResult.success(
