@@ -6577,76 +6577,6 @@
       "description": "Create a new incoming webhook/mailhook (Make 'hook') in a team -- a fresh trigger point a scenario can listen on. For a generic HTTP webhook, type_name='gateway-webhook' works without a connection_id; app-specific hook types may need one -- check an existing similar hook via list_hooks first when unsure.",
       "action_type": "write",
       "chain_callable": true,
-      "parameters_schema": {
-        "properties": {
-          "name": {
-            "description": "Display name for the new hook.",
-            "title": "Name",
-            "type": "string"
-          },
-          "team_id": {
-            "description": "Make team id (see list_make_teams).",
-            "title": "Team Id",
-            "type": "integer"
-          },
-          "type_name": {
-            "description": "Hook type, e.g. 'gateway-webhook' for a generic incoming webhook, or an app-specific hook type. Check an existing similar hook's type_name via list_hooks first when unsure.",
-            "title": "Type Name",
-            "type": "string"
-          },
-          "include_method": {
-            "default": false,
-            "description": "True to also capture the HTTP method of incoming requests.",
-            "title": "Include Method",
-            "type": "boolean"
-          },
-          "include_headers": {
-            "default": false,
-            "description": "True to also capture HTTP headers of incoming requests.",
-            "title": "Include Headers",
-            "type": "boolean"
-          },
-          "stringify": {
-            "default": false,
-            "description": "True to pass the raw body as a string instead of parsed JSON.",
-            "title": "Stringify",
-            "type": "boolean"
-          },
-          "connection_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Optional connection id, required by some app-specific hook types (not needed for a generic gateway-webhook).",
-            "title": "Connection Id"
-          },
-          "form_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Optional form id, only used by form-based hook types.",
-            "title": "Form Id"
-          }
-        },
-        "required": [
-          "name",
-          "team_id",
-          "type_name"
-        ],
-        "title": "CreateHookParams",
-        "type": "object"
-      },
       "return_schema": {
         "properties": {
           "id": {
@@ -6745,7 +6675,77 @@
       "effects": [
         "make.hook.created"
       ],
-      "event": "make-com-connector.create_hook"
+      "event": "make-com-connector.create_hook",
+      "params_schema": {
+        "properties": {
+          "name": {
+            "description": "Display name for the new hook.",
+            "title": "Name",
+            "type": "string"
+          },
+          "team_id": {
+            "description": "Make team id (see list_make_teams).",
+            "title": "Team Id",
+            "type": "integer"
+          },
+          "type_name": {
+            "description": "Hook type, e.g. 'gateway-webhook' for a generic incoming webhook, or an app-specific hook type. Check an existing similar hook's type_name via list_hooks first when unsure.",
+            "title": "Type Name",
+            "type": "string"
+          },
+          "include_method": {
+            "default": false,
+            "description": "True to also capture the HTTP method of incoming requests.",
+            "title": "Include Method",
+            "type": "boolean"
+          },
+          "include_headers": {
+            "default": false,
+            "description": "True to also capture HTTP headers of incoming requests.",
+            "title": "Include Headers",
+            "type": "boolean"
+          },
+          "stringify": {
+            "default": false,
+            "description": "True to pass the raw body as a string instead of parsed JSON.",
+            "title": "Stringify",
+            "type": "boolean"
+          },
+          "connection_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional connection id, required by some app-specific hook types (not needed for a generic gateway-webhook).",
+            "title": "Connection Id"
+          },
+          "form_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional form id, only used by form-based hook types.",
+            "title": "Form Id"
+          }
+        },
+        "required": [
+          "name",
+          "team_id",
+          "type_name"
+        ],
+        "title": "CreateHookParams",
+        "type": "object"
+      }
     }
   ],
   "signals": [],
