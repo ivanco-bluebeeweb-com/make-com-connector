@@ -80,7 +80,7 @@ def _team_picker_card(teams: list[dict]) -> ui.UINode:
         content=ui.Stack(direction="v", gap=2, children=[
             ui.Button(
                 t.get("title", f"Team {t.get('id')}"), variant="secondary", size="sm",
-                on_click=ui.Call("select_team", params={"team_id": int(t["id"])}),
+                on_click=ui.Call("select_team", team_id=int(t["id"])),
             )
             for t in teams
         ]),
