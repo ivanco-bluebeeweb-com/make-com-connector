@@ -527,3 +527,120 @@ class UsageDay(sdl.Entity):
 
 class ScenarioUsageReport(sdl.EntityList[UsageDay]):
     scenario_id: int = 0
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 15: execution history -- what actually happened on each run.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+class ListScenarioLogsParams(BaseModel):
+    scenario_id: int = Field(..., description="Make scenario id (see list_scenarios).")
+    status: str | None = Field(
+        None, description="Filter by outcome: 'success', 'warning', or 'error'. Omit for all.")
+    limit: int = Field(20, ge=1, le=100, description="Max executions to return, newest first.")
+
+
+class ScenarioExecutionLog(sdl.Entity):
+    id: str = ""
+    title: str = ""
+    execution_id: str = ""
+    status: str = ""
+    duration_ms: int = 0
+    operations: int = 0
+    transfer_bytes: int = 0
+    timestamp: str = ""
+    author_name: str = ""
+    instant: bool = False
+
+
+class ScenarioExecutionLogList(sdl.EntityList[ScenarioExecutionLog]):
+    scenario_id: int = 0
+
+
+class GetExecutionDetailsParams(BaseModel):
+    scenario_id: int = Field(..., description="Make scenario id.")
+    execution_id: str = Field(..., description="Execution id -- the id field from list_scenario_logs.")
+
+
+class ExecutionDetails(sdl.Entity):
+    """Per-run detail -- what a scenario execution actually produced or
+    why it failed, including which module/app was the cause."""
+    id: str = ""
+    title: str = ""
+    status: str = ""
+    outputs: dict = Field(default_factory=dict)
+    error_name: str = ""
+    error_message: str = ""
+    error_module_name: str = ""
+    error_app_name: str = ""
+
+
+class StopExecutionParams(BaseModel):
+    scenario_id: int = Field(..., description="Make scenario id.")
+    execution_id: str = Field(..., description="Execution id to stop -- must currently be running.")
+    force: bool = Field(False, description="True to terminate immediately instead of waiting for the current module to finish.")
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 16: blueprint module add/remove -- the other half of "full control"
+# beyond editing an existing module's fields.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+class PreviewAddBlueprintModuleParams(BaseModel):
+    scenario_id: int = Field(..., description="Make scenario id.")
+    app_module: str = Field(..., description="Make's own app:module id, e.g. 'openai-gpt-3:messageAssistantAdvanced' or 'builtin:BasicRouter'. Copy this from an existing similar module's `module` field in get_scenario_blueprint.")
+    mapper: dict = Field(default_factory=dict, description="The new module's settings (its mapper) -- same shape as raw_config on an existing module of the same app_module.")
+    after_module_id: int | None = Field(None, description="Insert immediately after this existing module's id. Omit to append at the end of the main flow.")
+    draft: bool | None = Field(None, description="True to preview against the draft version.")
+
+
+class BlueprintModuleAddPreview(sdl.Entity):
+    scenario_id: int = 0
+    app_module: str = ""
+    position_after: int = 0
+    total_modules_before: int = 0
+    total_modules_after: int = 0
+    expected_state_token: str = ""
+
+
+class ApplyAddBlueprintModuleParams(BaseModel):
+    scenario_id: int = Field(..., description="Make scenario id.")
+    app_module: str = Field(..., description="Same value used in preview_add_blueprint_module.")
+    mapper: dict = Field(default_factory=dict, description="Same value used in preview_add_blueprint_module.")
+    after_module_id: int | None = Field(None, description="Same value used in preview_add_blueprint_module.")
+    expected_state_token: str = Field(..., description="Exact token from preview_add_blueprint_module. Refuses to write if the blueprint changed since preview.")
+
+
+class BlueprintModuleAddResult(sdl.Entity):
+    scenario_id: int = 0
+    new_module_id: int = 0
+    total_modules: int = 0
+
+
+class PreviewDeleteBlueprintModuleParams(BaseModel):
+    scenario_id: int = Field(..., description="Make scenario id.")
+    module_id: int = Field(..., description="The module's own id (module_id from get_scenario_blueprint) to remove.")
+    draft: bool | None = Field(None, description="True to preview against the draft version.")
+
+
+class BlueprintModuleDeletePreview(sdl.Entity):
+    scenario_id: int = 0
+    module_id: int = 0
+    module_title: str = ""
+    total_modules_before: int = 0
+    total_modules_after: int = 0
+    expected_state_token: str = ""
+
+
+class ApplyDeleteBlueprintModuleParams(BaseModel):
+    scenario_id: int = Field(..., description="Make scenario id.")
+    module_id: int = Field(..., description="Same module_id used in preview_delete_blueprint_module.")
+    expected_state_token: str = Field(..., description="Exact token from preview_delete_blueprint_module. Refuses to write if the blueprint changed since preview.")
+
+
+class BlueprintModuleDeleteResult(sdl.Entity):
+    scenario_id: int = 0
+    deleted_module_id: int = 0
+    total_modules: int = 0

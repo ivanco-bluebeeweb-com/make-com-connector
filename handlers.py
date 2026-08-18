@@ -38,6 +38,12 @@ from schemas import (
     ListBuildtimeVariablesParams, BuildtimeVariable, BuildtimeVariableList,
     SetBuildtimeVariableParams, DeleteBuildtimeVariableParams,
     GetScenarioUsageParams, UsageDay, ScenarioUsageReport,
+    ListScenarioLogsParams, ScenarioExecutionLog, ScenarioExecutionLogList,
+    GetExecutionDetailsParams, ExecutionDetails, StopExecutionParams,
+    PreviewAddBlueprintModuleParams, BlueprintModuleAddPreview,
+    ApplyAddBlueprintModuleParams, BlueprintModuleAddResult,
+    PreviewDeleteBlueprintModuleParams, BlueprintModuleDeletePreview,
+    ApplyDeleteBlueprintModuleParams, BlueprintModuleDeleteResult,
 )
 from schemas import MakeScenario as _MakeScenario  # reused for create/clone/restore results
 
@@ -1455,3 +1461,307 @@ async def get_scenario_usage(ctx, params: GetScenarioUsageParams) -> ActionResul
         for d in raw
     ]
     return ActionResult.success(ScenarioUsageReport(items=items, total=len(items), scenario_id=params.scenario_id))
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 15: execution history -- what actually happened on each run.
+# ──────────────────────────────────────────────────────────────────────────
+
+_STATUS_TO_CODE = {"success": 1, "warning": 2, "error": 3}
+_CODE_TO_STATUS = {1: "success", 2: "warning", 3: "error"}
+
+
+@chat.function(
+    "list_scenario_logs",
+    "List a scenario's own operations/data-transfer usage history -- how "
+    "much of your Make quota each run consumed, most recent first.",
+    action_type="read",
+    chain_callable=True,
+    data_model=ScenarioExecutionLogList,
+)
+async def list_scenario_logs(ctx, params: ListScenarioLogsParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    status_code = _STATUS_TO_CODE.get((params.status or "").lower())
+    try:
+        raw = await mc.list_scenario_logs(
+            ctx, token, zone, params.scenario_id, status=status_code, limit=params.limit,
+        )
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    items = [
+        ScenarioExecutionLog(
+            id=str(l.get("id", "")), title=f"Run {l.get('id', '')}",
+            execution_id=str(l.get("id", "")),
+            status=_CODE_TO_STATUS.get(l.get("status"), str(l.get("status", ""))),
+            duration_ms=int(l.get("duration") or 0),
+            operations=int(l.get("operations") or 0),
+            transfer_bytes=int(l.get("transfer") or 0),
+            timestamp=str(l.get("finished") or l.get("started") or ""),
+            author_name=str(l.get("author", {}).get("name", "") if isinstance(l.get("author"), dict) else ""),
+            instant=bool(l.get("instant")),
+        )
+        for l in raw
+    ]
+    return ActionResult.success(
+        ScenarioExecutionLogList(items=items, total=len(items), scenario_id=params.scenario_id),
+    )
+
+
+@chat.function(
+    "get_execution_details",
+    "Read one scenario execution in full -- its actual outputs, or on "
+    "failure the error message and which module/app caused it.",
+    action_type="read",
+    chain_callable=True,
+    data_model=ExecutionDetails,
+)
+async def get_execution_details(ctx, params: GetExecutionDetailsParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        raw = await mc.get_execution_details(ctx, token, zone, params.scenario_id, params.execution_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    execution = raw.get("scenarioLog") or raw.get("execution") or raw
+    error = execution.get("error") or {}
+    result = ExecutionDetails(
+        id=str(execution.get("id", params.execution_id)),
+        title=f"Execution {params.execution_id}",
+        status=_CODE_TO_STATUS.get(execution.get("status"), str(execution.get("status", ""))),
+        outputs=execution.get("bundles") or execution.get("outputs") or {},
+        error_name=str(error.get("name", "")) if isinstance(error, dict) else "",
+        error_message=str(error.get("message", "")) if isinstance(error, dict) else (str(error) if error else ""),
+        error_module_name=str((error.get("subModule") or {}).get("label", "")) if isinstance(error, dict) else "",
+        error_app_name=str((error.get("subModule") or {}).get("app", "")) if isinstance(error, dict) else "",
+    )
+    return ActionResult.success(result)
+
+
+@chat.function(
+    "stop_execution",
+    "Stop a currently-running scenario execution.",
+    action_type="write",
+    chain_callable=True,
+    data_model=DeleteResult,
+    event="make-com-connector.stop_execution",
+    effects=["make.execution.stopped"],
+)
+async def stop_execution(ctx, params: StopExecutionParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        await mc.stop_execution(ctx, token, zone, params.scenario_id, params.execution_id, force=params.force)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        DeleteResult(deleted=True, id=params.execution_id),
+        summary=f"Execution {params.execution_id} stopped.",
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 16: blueprint module add/remove -- the other half of "full control"
+# beyond editing an existing module's own fields. Same discipline as
+# preview_update_blueprint_module: read the live blueprint, mutate flow[]
+# in memory, PATCH the whole document back, gated by a state token so a
+# concurrent edit is refused instead of silently overwritten.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def _insert_after(flow: list, after_module_id: int | None, new_node: dict) -> bool:
+    """Insert new_node into flow (top-level only -- inside router branches
+    is deliberately out of scope for now, same as _find_module_in_flow's
+    search depth) right after the module with id == after_module_id, or
+    append at the end if after_module_id is None/not found at top level."""
+    if after_module_id is None:
+        flow.append(new_node)
+        return True
+    for i, node in enumerate(flow):
+        if int(node.get("id") or -1) == after_module_id:
+            flow.insert(i + 1, new_node)
+            return True
+    flow.append(new_node)
+    return True
+
+
+def _next_module_id(flow: list) -> int:
+    ids = [int(n.get("id") or 0) for n in flow]
+    for route_node in flow:
+        for route in (route_node.get("routes") or []):
+            ids += [int(n.get("id") or 0) for n in (route.get("flow") or [])]
+    return (max(ids) + 1) if ids else 1
+
+
+@chat.function(
+    "preview_add_blueprint_module",
+    "Preview adding a brand-new module to a scenario's flow, without "
+    "writing anything. Shows where it will land and a state token that "
+    "apply_add_blueprint_module must be given unchanged. Use "
+    "get_scenario_blueprint on a similar existing module first to see the "
+    "exact app_module id and mapper shape to copy.",
+    action_type="read",
+    chain_callable=True,
+    data_model=BlueprintModuleAddPreview,
+)
+async def preview_add_blueprint_module(ctx, params: PreviewAddBlueprintModuleParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id, draft=params.draft)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    flow = blueprint.get("flow") or []
+    before = len(_flatten_blueprint_modules(flow))
+    token_hash = mc.blueprint_state_hash(blueprint)
+    result = BlueprintModuleAddPreview(
+        scenario_id=params.scenario_id, app_module=params.app_module,
+        position_after=params.after_module_id or 0,
+        total_modules_before=before, total_modules_after=before + 1,
+        expected_state_token=token_hash,
+    )
+    return ActionResult.success(
+        result,
+        summary=f"Will add '{params.app_module}' ({before} -> {before + 1} modules). "
+                f"Pass expected_state_token to apply_add_blueprint_module to confirm.",
+    )
+
+
+@chat.function(
+    "apply_add_blueprint_module",
+    "Apply a previously previewed new module addition to a scenario. "
+    "Re-reads the exact scenario blueprint and refuses to write if it "
+    "changed since preview.",
+    action_type="write",
+    chain_callable=True,
+    data_model=BlueprintModuleAddResult,
+    event="make-com-connector.apply_add_blueprint_module",
+    effects=["make.scenario.blueprint_module_added"],
+)
+async def apply_add_blueprint_module(ctx, params: ApplyAddBlueprintModuleParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    current_hash = mc.blueprint_state_hash(blueprint)
+    if current_hash != params.expected_state_token:
+        return ActionResult.error(
+            "This scenario's blueprint changed since you previewed this add "
+            "(e.g. someone edited it in the Make UI). Run preview_add_blueprint_module "
+            "again to get a fresh state token.",
+            code="MAKE_BLUEPRINT_STATE_MISMATCH",
+        )
+    flow = blueprint.get("flow") or []
+    new_id = _next_module_id(flow)
+    new_node = {"id": new_id, "module": params.app_module, "version": 1, "mapper": params.mapper, "metadata": {}}
+    _insert_after(flow, params.after_module_id, new_node)
+    blueprint["flow"] = flow
+    try:
+        await mc.update_scenario(ctx, token, zone, params.scenario_id, blueprint=blueprint)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        BlueprintModuleAddResult(
+            scenario_id=params.scenario_id, new_module_id=new_id,
+            total_modules=len(_flatten_blueprint_modules(flow)),
+        ),
+        summary=f"Module '{params.app_module}' added (id {new_id}).",
+        refresh_panels=["make_connect"],
+    )
+
+
+@chat.function(
+    "preview_delete_blueprint_module",
+    "Preview removing one module from a scenario's flow, without writing "
+    "anything. Shows a state token that apply_delete_blueprint_module "
+    "must be given unchanged.",
+    action_type="read",
+    chain_callable=True,
+    data_model=BlueprintModuleDeletePreview,
+)
+async def preview_delete_blueprint_module(ctx, params: PreviewDeleteBlueprintModuleParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id, draft=params.draft)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    flow = blueprint.get("flow") or []
+    target = _find_module_in_flow(flow, params.module_id)
+    if target is None:
+        return ActionResult.error(
+            f"No module with id {params.module_id} found in this scenario's flow (router "
+            "sub-branch deletion is not supported yet -- only top-level modules).",
+            code="MAKE_MODULE_NOT_FOUND",
+        )
+    before = len(_flatten_blueprint_modules(flow))
+    token_hash = mc.blueprint_state_hash(blueprint)
+    title = target.get("label") or target.get("module") or f"Module {params.module_id}"
+    result = BlueprintModuleDeletePreview(
+        scenario_id=params.scenario_id, module_id=params.module_id, module_title=title,
+        total_modules_before=before, total_modules_after=before - 1,
+        expected_state_token=token_hash,
+    )
+    return ActionResult.success(
+        result,
+        summary=f"Will remove '{title}' ({before} -> {before - 1} modules). "
+                f"Pass expected_state_token to apply_delete_blueprint_module to confirm.",
+    )
+
+
+@chat.function(
+    "apply_delete_blueprint_module",
+    "Apply a previously previewed module removal from a scenario. "
+    "Re-reads the exact scenario blueprint and refuses to write if it "
+    "changed since preview.",
+    action_type="write",
+    chain_callable=True,
+    data_model=BlueprintModuleDeleteResult,
+    event="make-com-connector.apply_delete_blueprint_module",
+    effects=["make.scenario.blueprint_module_deleted"],
+)
+async def apply_delete_blueprint_module(ctx, params: ApplyDeleteBlueprintModuleParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    current_hash = mc.blueprint_state_hash(blueprint)
+    if current_hash != params.expected_state_token:
+        return ActionResult.error(
+            "This scenario's blueprint changed since you previewed this delete "
+            "(e.g. someone edited it in the Make UI). Run preview_delete_blueprint_module "
+            "again to get a fresh state token.",
+            code="MAKE_BLUEPRINT_STATE_MISMATCH",
+        )
+    flow = blueprint.get("flow") or []
+    if not any(int(n.get("id") or -1) == params.module_id for n in flow):
+        return ActionResult.error(
+            f"No top-level module with id {params.module_id} found (it may be inside a "
+            "router branch, which isn't supported yet, or already removed).",
+            code="MAKE_MODULE_NOT_FOUND",
+        )
+    flow = [n for n in flow if int(n.get("id") or -1) != params.module_id]
+    blueprint["flow"] = flow
+    try:
+        await mc.update_scenario(ctx, token, zone, params.scenario_id, blueprint=blueprint)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        BlueprintModuleDeleteResult(
+            scenario_id=params.scenario_id, deleted_module_id=params.module_id,
+            total_modules=len(_flatten_blueprint_modules(flow)),
+        ),
+        summary=f"Module {params.module_id} removed.",
+        refresh_panels=["make_connect"],
+    )

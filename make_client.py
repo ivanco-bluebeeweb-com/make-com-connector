@@ -540,3 +540,50 @@ async def delete_buildtime_variable(ctx, token: str, zone: str, scenario_id: int
         headers=_headers(token), params={"value": name},
     )
     _check_status(resp, "delete buildtime variable")
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 15: execution history -- what actually happened on each run, not
+# just the module tree. Per developers.make.com/api-reference/scenarios/
+# logs: /logs is the run-list (duration/status/credits), /executions/{id}
+# is the per-run detail (outputs + error + causeModule).
+# ──────────────────────────────────────────────────────────────────────────
+
+# Make's numeric log status codes -- surfaced as readable strings so a
+# chat answer never has to explain "status 3 means error".
+_LOG_STATUS = {1: "success", 2: "warning", 3: "error"}
+
+
+async def list_scenario_logs(
+    ctx, token: str, zone: str, scenario_id: int, *,
+    status: int | None = None, limit: int = 20,
+) -> list[dict]:
+    params: dict = {"pg[limit]": limit}
+    if status is not None:
+        params["status"] = status
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/logs",
+        headers=_headers(token), params=params,
+    )
+    body = _check_status(resp, "list scenario logs")
+    return body.get("scenarioLogs") or []
+
+
+async def get_execution_details(ctx, token: str, zone: str, scenario_id: int, execution_id: str) -> dict:
+    """GET /scenarios/{id}/executions/{executionId} -- the one call that
+    returns actual per-run outputs and, on failure, the error message and
+    which module/app caused it."""
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/executions/{execution_id}",
+        headers=_headers(token),
+    )
+    return _check_status(resp, "get execution details")
+
+
+async def stop_execution(ctx, token: str, zone: str, scenario_id: int, execution_id: str, *, force: bool = False) -> None:
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/executions/{execution_id}/stop",
+        headers={**_headers(token), "Content-Type": "application/json"},
+        json={"force": force},
+    )
+    _check_status(resp, "stop execution")

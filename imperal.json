@@ -4836,6 +4836,1031 @@
         "type": "object",
         "x-sdl": "entity-list"
       }
+    },
+    {
+      "name": "list_scenario_logs",
+      "description": "List a scenario's own operations/data-transfer usage history -- how much of your Make quota each run consumed, most recent first.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Make scenario id (see list_scenarios).",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by outcome: 'success', 'warning', or 'error'. Omit for all.",
+            "title": "Status"
+          },
+          "limit": {
+            "default": 20,
+            "description": "Max executions to return, newest first.",
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scenario_id"
+        ],
+        "title": "ListScenarioLogsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "ScenarioExecutionLog": {
+            "properties": {
+              "id": {
+                "default": "",
+                "title": "Id",
+                "type": "string"
+              },
+              "title": {
+                "default": "",
+                "title": "Title",
+                "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "default": "",
+                "title": "Status",
+                "type": "string"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Url"
+              },
+              "execution_id": {
+                "default": "",
+                "title": "Execution Id",
+                "type": "string"
+              },
+              "duration_ms": {
+                "default": 0,
+                "title": "Duration Ms",
+                "type": "integer"
+              },
+              "operations": {
+                "default": 0,
+                "title": "Operations",
+                "type": "integer"
+              },
+              "transfer_bytes": {
+                "default": 0,
+                "title": "Transfer Bytes",
+                "type": "integer"
+              },
+              "timestamp": {
+                "default": "",
+                "title": "Timestamp",
+                "type": "string"
+              },
+              "author_name": {
+                "default": "",
+                "title": "Author Name",
+                "type": "string"
+              },
+              "instant": {
+                "default": false,
+                "title": "Instant",
+                "type": "boolean"
+              }
+            },
+            "title": "ScenarioExecutionLog",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/ScenarioExecutionLog"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ScenarioExecutionLogList",
+        "type": "object",
+        "x-sdl": "entity-list"
+      }
+    },
+    {
+      "name": "get_execution_details",
+      "description": "Read one scenario execution in full -- its actual outputs, or on failure the error message and which module/app caused it.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Make scenario id.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "execution_id": {
+            "description": "Execution id -- the id field from list_scenario_logs.",
+            "title": "Execution Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "execution_id"
+        ],
+        "title": "GetExecutionDetailsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "description": "Per-run detail -- what a scenario execution actually produced or\nwhy it failed, including which module/app was the cause.",
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "default": "",
+            "title": "Status",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "outputs": {
+            "additionalProperties": true,
+            "title": "Outputs",
+            "type": "object"
+          },
+          "error_name": {
+            "default": "",
+            "title": "Error Name",
+            "type": "string"
+          },
+          "error_message": {
+            "default": "",
+            "title": "Error Message",
+            "type": "string"
+          },
+          "error_module_name": {
+            "default": "",
+            "title": "Error Module Name",
+            "type": "string"
+          },
+          "error_app_name": {
+            "default": "",
+            "title": "Error App Name",
+            "type": "string"
+          }
+        },
+        "title": "ExecutionDetails",
+        "type": "object",
+        "x-sdl": "entity"
+      }
+    },
+    {
+      "name": "stop_execution",
+      "description": "Stop a currently-running scenario execution.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.execution.stopped"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Make scenario id.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "execution_id": {
+            "description": "Execution id to stop -- must currently be running.",
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "force": {
+            "default": false,
+            "description": "True to terminate immediately instead of waiting for the current module to finish.",
+            "title": "Force",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "execution_id"
+        ],
+        "title": "StopExecutionParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "deleted": {
+            "default": false,
+            "title": "Deleted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "DeleteResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.stop_execution"
+    },
+    {
+      "name": "preview_add_blueprint_module",
+      "description": "Preview adding a brand-new module to a scenario's flow, without writing anything. Shows where it will land and a state token that apply_add_blueprint_module must be given unchanged. Use get_scenario_blueprint on a similar existing module first to see the exact app_module id and mapper shape to copy.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Make scenario id.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "app_module": {
+            "description": "Make's own app:module id, e.g. 'openai-gpt-3:messageAssistantAdvanced' or 'builtin:BasicRouter'. Copy this from an existing similar module's `module` field in get_scenario_blueprint.",
+            "title": "App Module",
+            "type": "string"
+          },
+          "mapper": {
+            "additionalProperties": true,
+            "description": "The new module's settings (its mapper) -- same shape as raw_config on an existing module of the same app_module.",
+            "title": "Mapper",
+            "type": "object"
+          },
+          "after_module_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Insert immediately after this existing module's id. Omit to append at the end of the main flow.",
+            "title": "After Module Id"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "True to preview against the draft version.",
+            "title": "Draft"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "app_module"
+        ],
+        "title": "PreviewAddBlueprintModuleParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "app_module": {
+            "default": "",
+            "title": "App Module",
+            "type": "string"
+          },
+          "position_after": {
+            "default": 0,
+            "title": "Position After",
+            "type": "integer"
+          },
+          "total_modules_before": {
+            "default": 0,
+            "title": "Total Modules Before",
+            "type": "integer"
+          },
+          "total_modules_after": {
+            "default": 0,
+            "title": "Total Modules After",
+            "type": "integer"
+          },
+          "expected_state_token": {
+            "default": "",
+            "title": "Expected State Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "BlueprintModuleAddPreview",
+        "type": "object",
+        "x-sdl": "entity"
+      }
+    },
+    {
+      "name": "apply_add_blueprint_module",
+      "description": "Apply a previously previewed new module addition to a scenario. Re-reads the exact scenario blueprint and refuses to write if it changed since preview.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.scenario.blueprint_module_added"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Make scenario id.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "app_module": {
+            "description": "Same value used in preview_add_blueprint_module.",
+            "title": "App Module",
+            "type": "string"
+          },
+          "mapper": {
+            "additionalProperties": true,
+            "description": "Same value used in preview_add_blueprint_module.",
+            "title": "Mapper",
+            "type": "object"
+          },
+          "after_module_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Same value used in preview_add_blueprint_module.",
+            "title": "After Module Id"
+          },
+          "expected_state_token": {
+            "description": "Exact token from preview_add_blueprint_module. Refuses to write if the blueprint changed since preview.",
+            "title": "Expected State Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "app_module",
+          "expected_state_token"
+        ],
+        "title": "ApplyAddBlueprintModuleParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "new_module_id": {
+            "default": 0,
+            "title": "New Module Id",
+            "type": "integer"
+          },
+          "total_modules": {
+            "default": 0,
+            "title": "Total Modules",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "BlueprintModuleAddResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.apply_add_blueprint_module"
+    },
+    {
+      "name": "preview_delete_blueprint_module",
+      "description": "Preview removing one module from a scenario's flow, without writing anything. Shows a state token that apply_delete_blueprint_module must be given unchanged.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Make scenario id.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "module_id": {
+            "description": "The module's own id (module_id from get_scenario_blueprint) to remove.",
+            "title": "Module Id",
+            "type": "integer"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "True to preview against the draft version.",
+            "title": "Draft"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "module_id"
+        ],
+        "title": "PreviewDeleteBlueprintModuleParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "module_id": {
+            "default": 0,
+            "title": "Module Id",
+            "type": "integer"
+          },
+          "module_title": {
+            "default": "",
+            "title": "Module Title",
+            "type": "string"
+          },
+          "total_modules_before": {
+            "default": 0,
+            "title": "Total Modules Before",
+            "type": "integer"
+          },
+          "total_modules_after": {
+            "default": 0,
+            "title": "Total Modules After",
+            "type": "integer"
+          },
+          "expected_state_token": {
+            "default": "",
+            "title": "Expected State Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "BlueprintModuleDeletePreview",
+        "type": "object",
+        "x-sdl": "entity"
+      }
+    },
+    {
+      "name": "apply_delete_blueprint_module",
+      "description": "Apply a previously previewed module removal from a scenario. Re-reads the exact scenario blueprint and refuses to write if it changed since preview.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.scenario.blueprint_module_deleted"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Make scenario id.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "module_id": {
+            "description": "Same module_id used in preview_delete_blueprint_module.",
+            "title": "Module Id",
+            "type": "integer"
+          },
+          "expected_state_token": {
+            "description": "Exact token from preview_delete_blueprint_module. Refuses to write if the blueprint changed since preview.",
+            "title": "Expected State Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "module_id",
+          "expected_state_token"
+        ],
+        "title": "ApplyDeleteBlueprintModuleParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "deleted_module_id": {
+            "default": 0,
+            "title": "Deleted Module Id",
+            "type": "integer"
+          },
+          "total_modules": {
+            "default": 0,
+            "title": "Total Modules",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "BlueprintModuleDeleteResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.apply_delete_blueprint_module"
     }
   ],
   "signals": [],
