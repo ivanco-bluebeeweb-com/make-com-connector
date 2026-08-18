@@ -44,11 +44,37 @@ def _headers(token: str) -> dict:
     return {"Authorization": f"Token {token}", "Accept": "*/*"}
 
 
+def _error_detail(resp) -> str:
+    """Make's own unified error schema is {"detail", "message", "code"}
+    (e.g. code="SC403"/"IM002" for a valid token missing a scope, vs a
+    plain 401 for a token the zone doesn't recognise at all) -- surface
+    it instead of discarding the body, since it's the one thing that
+    tells a real auth failure apart from a real scope failure."""
+    body = resp.body if isinstance(resp.body, dict) else {}
+    detail = body.get("detail") or body.get("message") or ""
+    code = body.get("code") or ""
+    if detail and code:
+        return f"{detail} (Make code: {code})"
+    return detail or code or ""
+
+
 def _check_status(resp, action: str) -> dict:
-    if resp.status_code == 401 or resp.status_code == 403:
+    if resp.status_code == 401:
+        detail = _error_detail(resp)
         raise ProviderError(
-            f"Make {action} failed: token rejected (HTTP {resp.status_code})",
+            f"Make {action} failed: token rejected (HTTP 401)"
+            + (f" -- {detail}" if detail else ""),
             "MAKE_AUTH_ERROR",
+        )
+    if resp.status_code == 403:
+        detail = _error_detail(resp)
+        raise ProviderError(
+            f"Make {action} failed: access denied (HTTP 403)"
+            + (f" -- {detail}." if detail else ".")
+            + " Your token is valid but likely missing a required scope for "
+              "this action -- edit it in Make: avatar -> Profile -> API tab, "
+              "and add the missing scope(s).",
+            "MAKE_SCOPE_ERROR",
         )
     if resp.status_code >= 400:
         raise ProviderError(
@@ -58,12 +84,24 @@ def _check_status(resp, action: str) -> dict:
 
 
 async def discover_zone(ctx, token: str) -> tuple[str, dict]:
-    """Try each known public zone's GET /users/me with this token until one
-    accepts it. Returns (winning zone host, authUser dict from that same
-    response -- no second round-trip needed). Raises ProviderError if none
-    of the known public zones accept the token -- e.g. an on-prem/custom
-    zone (eu1.make.celonis.com etc.) that the user must supply manually via
-    the platform Secrets screen instead."""
+    """Try each known public zone's GET /users/me (requires the
+    organizations:read scope, per Make's own OpenAPI spec) with this token
+    until one accepts it.
+
+    401 vs 403 here mean genuinely different things and must NOT be
+    conflated: a 401 means this zone doesn't recognise the token at all
+    (keep probing -- it may belong to another zone), while a 403 means
+    this IS the right zone -- Make found the token and knows who it
+    belongs to -- but the token lacks the organizations:read scope. A 403
+    therefore stops the probe immediately and reports the real, fixable
+    cause (missing scope) instead of masquerading as \"rejected by every
+    zone\", which would wrongly suggest the token itself is invalid.
+
+    Returns (winning zone host, authUser dict from that same response --
+    no second round-trip needed). Raises ProviderError if every known
+    public zone returns 401 -- e.g. an on-prem/custom zone (eu1.make.
+    celonis.com etc.) that the user must supply manually via the platform
+    Secrets screen instead."""
     last_error: ProviderError | None = None
     for zone in KNOWN_ZONES:
         resp = await ctx.http.get(
@@ -72,7 +110,18 @@ async def discover_zone(ctx, token: str) -> tuple[str, dict]:
         if resp.status_code == 200:
             body = resp.body if isinstance(resp.body, dict) else {}
             return zone, (body.get("authUser") or {})
-        if resp.status_code in (401, 403):
+        if resp.status_code == 403:
+            detail = _error_detail(resp)
+            raise ProviderError(
+                f"Your Make token was recognised on {zone}, but it's missing "
+                "the 'organizations:read' scope this connector needs to set "
+                "up your account." + (f" ({detail})" if detail else "") +
+                " Fix: in Make, go to avatar -> Profile -> API tab, edit (or "
+                "recreate) this token, and make sure 'organizations:read' is "
+                "checked, then try connecting again.",
+                "MAKE_SCOPE_ERROR",
+            )
+        if resp.status_code == 401:
             last_error = ProviderError(
                 f"Make token rejected by every known zone ({', '.join(KNOWN_ZONES)}). "
                 "If your organization uses a custom/on-prem zone, that isn't "
