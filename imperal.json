@@ -18,7 +18,9 @@
       "description": "Connect Make.com by saving your own API token, after checking it actually works. Create the token in Make: avatar (bottom-left) -> Profile -> API tab -> Add token. The account's zone (eu1/eu2/us1/us2) is auto-detected -- you don't need to know it.",
       "action_type": "write",
       "chain_callable": true,
-      "effects": ["make.provider.connected"],
+      "effects": [
+        "make.provider.connected"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -34,10 +36,26 @@
       },
       "return_schema": {
         "properties": {
-          "id": {"default": "", "title": "Id", "type": "string"},
-          "title": {"default": "", "title": "Title", "type": "string"},
-          "connected": {"default": false, "title": "Connected", "type": "boolean"},
-          "detail": {"default": "", "title": "Detail", "type": "string"}
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "connected": {
+            "default": false,
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
         },
         "title": "ProviderConnection",
         "type": "object",
@@ -54,7 +72,9 @@
       "description": "Disconnect Make.com: deletes the saved API token and zone. Existing scenarios in your Make account are never touched.",
       "action_type": "write",
       "chain_callable": true,
-      "effects": ["make.provider.disconnected"],
+      "effects": [
+        "make.provider.disconnected"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {},
@@ -63,10 +83,26 @@
       },
       "return_schema": {
         "properties": {
-          "id": {"default": "", "title": "Id", "type": "string"},
-          "title": {"default": "", "title": "Title", "type": "string"},
-          "connected": {"default": false, "title": "Connected", "type": "boolean"},
-          "detail": {"default": "", "title": "Detail", "type": "string"}
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "connected": {
+            "default": false,
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
         },
         "title": "ProviderConnection",
         "type": "object",
@@ -92,10 +128,26 @@
       },
       "return_schema": {
         "properties": {
-          "id": {"default": "", "title": "Id", "type": "string"},
-          "title": {"default": "", "title": "Title", "type": "string"},
-          "connected": {"default": false, "title": "Connected", "type": "boolean"},
-          "detail": {"default": "", "title": "Detail", "type": "string"}
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "connected": {
+            "default": false,
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
         },
         "title": "ProviderConnection",
         "type": "object",
@@ -123,9 +175,21 @@
         "$defs": {
           "MakeTeam": {
             "properties": {
-              "id": {"default": "", "title": "Id", "type": "string"},
-              "title": {"default": "", "title": "Title", "type": "string"},
-              "organization_id": {"default": 0, "title": "Organization Id", "type": "integer"}
+              "id": {
+                "default": "",
+                "title": "Id",
+                "type": "string"
+              },
+              "title": {
+                "default": "",
+                "title": "Title",
+                "type": "string"
+              },
+              "organization_id": {
+                "default": 0,
+                "title": "Organization Id",
+                "type": "integer"
+              }
             },
             "title": "MakeTeam",
             "type": "object",
@@ -133,8 +197,18 @@
           }
         },
         "properties": {
-          "items": {"items": {"$ref": "#/$defs/MakeTeam"}, "title": "Items", "type": "array"},
-          "total": {"default": 0, "title": "Total", "type": "integer"}
+          "items": {
+            "items": {
+              "$ref": "#/$defs/MakeTeam"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "default": 0,
+            "title": "Total",
+            "type": "integer"
+          }
         },
         "title": "MakeTeamList",
         "type": "object",
@@ -151,7 +225,9 @@
       "description": "Pick which Make.com team's scenarios to show. Run list_make_teams first to see the available team ids. This is a standing choice -- it stays selected until changed again.",
       "action_type": "write",
       "chain_callable": true,
-      "effects": ["make.team_scope.changed"],
+      "effects": [
+        "make.team_scope.changed"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -161,16 +237,34 @@
             "type": "integer"
           }
         },
-        "required": ["team_id"],
+        "required": [
+          "team_id"
+        ],
         "title": "SelectTeamParams",
         "type": "object"
       },
       "return_schema": {
         "properties": {
-          "id": {"default": "", "title": "Id", "type": "string"},
-          "title": {"default": "", "title": "Title", "type": "string"},
-          "connected": {"default": false, "title": "Connected", "type": "boolean"},
-          "detail": {"default": "", "title": "Detail", "type": "string"}
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "connected": {
+            "default": false,
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
         },
         "title": "ProviderConnection",
         "type": "object",
@@ -191,8 +285,19 @@
       "id_projection": "",
       "params_schema": {
         "properties": {
-          "limit": {"default": 50, "maximum": 200, "minimum": 1, "title": "Limit", "type": "integer"},
-          "offset": {"default": 0, "minimum": 0, "title": "Offset", "type": "integer"}
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          }
         },
         "title": "ListScenariosParams",
         "type": "object"
@@ -201,16 +306,56 @@
         "$defs": {
           "MakeScenario": {
             "properties": {
-              "id": {"default": "", "title": "Id", "type": "string"},
-              "title": {"default": "", "title": "Title", "type": "string"},
-              "scenario_id": {"default": 0, "title": "Scenario Id", "type": "integer"},
-              "team_id": {"default": 0, "title": "Team Id", "type": "integer"},
-              "is_active": {"default": false, "title": "Is Active", "type": "boolean"},
-              "is_paused": {"default": false, "title": "Is Paused", "type": "boolean"},
-              "is_invalid": {"default": false, "title": "Is Invalid", "type": "boolean"},
-              "folder_id": {"default": null, "title": "Folder Id", "type": "integer"},
-              "last_edit": {"default": "", "title": "Last Edit", "type": "string"},
-              "scheduling_type": {"default": "", "title": "Scheduling Type", "type": "string"}
+              "id": {
+                "default": "",
+                "title": "Id",
+                "type": "string"
+              },
+              "title": {
+                "default": "",
+                "title": "Title",
+                "type": "string"
+              },
+              "scenario_id": {
+                "default": 0,
+                "title": "Scenario Id",
+                "type": "integer"
+              },
+              "team_id": {
+                "default": 0,
+                "title": "Team Id",
+                "type": "integer"
+              },
+              "is_active": {
+                "default": false,
+                "title": "Is Active",
+                "type": "boolean"
+              },
+              "is_paused": {
+                "default": false,
+                "title": "Is Paused",
+                "type": "boolean"
+              },
+              "is_invalid": {
+                "default": false,
+                "title": "Is Invalid",
+                "type": "boolean"
+              },
+              "folder_id": {
+                "default": null,
+                "title": "Folder Id",
+                "type": "integer"
+              },
+              "last_edit": {
+                "default": "",
+                "title": "Last Edit",
+                "type": "string"
+              },
+              "scheduling_type": {
+                "default": "",
+                "title": "Scheduling Type",
+                "type": "string"
+              }
             },
             "title": "MakeScenario",
             "type": "object",
@@ -218,8 +363,18 @@
           }
         },
         "properties": {
-          "items": {"items": {"$ref": "#/$defs/MakeScenario"}, "title": "Items", "type": "array"},
-          "total": {"default": 0, "title": "Total", "type": "integer"}
+          "items": {
+            "items": {
+              "$ref": "#/$defs/MakeScenario"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "default": 0,
+            "title": "Total",
+            "type": "integer"
+          }
         },
         "title": "MakeScenarioList",
         "type": "object",
@@ -236,7 +391,9 @@
       "description": "Run one of your Make.com scenarios right now, by scenario_id (see list_scenarios). This executes the scenario's real actions in Make immediately -- sending emails, writing to connected apps, etc. There is no dry-run or undo, so this always asks for confirm=true first.",
       "action_type": "write",
       "chain_callable": true,
-      "effects": ["make.scenario.run"],
+      "effects": [
+        "make.scenario.run"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -252,17 +409,39 @@
             "type": "boolean"
           }
         },
-        "required": ["scenario_id"],
+        "required": [
+          "scenario_id"
+        ],
         "title": "RunScenarioParams",
         "type": "object"
       },
       "return_schema": {
         "properties": {
-          "id": {"default": "", "title": "Id", "type": "string"},
-          "title": {"default": "", "title": "Title", "type": "string"},
-          "scenario_id": {"default": 0, "title": "Scenario Id", "type": "integer"},
-          "execution_id": {"default": "", "title": "Execution Id", "type": "string"},
-          "status": {"default": "", "title": "Status", "type": "string"}
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "execution_id": {
+            "default": "",
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "status": {
+            "default": "",
+            "title": "Status",
+            "type": "string"
+          }
         },
         "title": "ScenarioRunResult",
         "type": "object",
@@ -279,7 +458,9 @@
       "description": "Activate (turn on/schedule) or deactivate (pause) a Make.com scenario by scenario_id (see list_scenarios). Reversible -- flip it back any time -- so unlike run_scenario this needs no confirmation.",
       "action_type": "write",
       "chain_callable": true,
-      "effects": ["make.scenario.state_changed"],
+      "effects": [
+        "make.scenario.state_changed"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -294,16 +475,35 @@
             "type": "boolean"
           }
         },
-        "required": ["scenario_id", "active"],
+        "required": [
+          "scenario_id",
+          "active"
+        ],
         "title": "SetScenarioActiveParams",
         "type": "object"
       },
       "return_schema": {
         "properties": {
-          "id": {"default": "", "title": "Id", "type": "string"},
-          "title": {"default": "", "title": "Title", "type": "string"},
-          "scenario_id": {"default": 0, "title": "Scenario Id", "type": "integer"},
-          "is_active": {"default": false, "title": "Is Active", "type": "boolean"}
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "default": false,
+            "title": "Is Active",
+            "type": "boolean"
+          }
         },
         "title": "ScenarioStateResult",
         "type": "object",
@@ -320,7 +520,9 @@
       "description": "Save (or clear, with an empty webhook_url) the Make Custom Webhook trigger URL that send_webhook_event will POST to. Get this URL by adding a 'Custom Webhook' module as the first step of a Make scenario and copying its URL. This is independent of connect_make.",
       "action_type": "write",
       "chain_callable": true,
-      "effects": ["make.webhook.configured"],
+      "effects": [
+        "make.webhook.configured"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -336,8 +538,16 @@
       },
       "return_schema": {
         "properties": {
-          "configured": {"default": false, "title": "Configured", "type": "boolean"},
-          "detail": {"default": "", "title": "Detail", "type": "string"}
+          "configured": {
+            "default": false,
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
         },
         "title": "OutgoingWebhookStatus",
         "type": "object",
@@ -363,8 +573,16 @@
       },
       "return_schema": {
         "properties": {
-          "configured": {"default": false, "title": "Configured", "type": "boolean"},
-          "detail": {"default": "", "title": "Detail", "type": "string"}
+          "configured": {
+            "default": false,
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
         },
         "title": "OutgoingWebhookStatus",
         "type": "object",
@@ -381,7 +599,9 @@
       "description": "Send an event payload to the configured Make webhook right now -- for other Imperal apps/automations to trigger a Make scenario. Run set_outgoing_webhook first if you haven't configured one yet.",
       "action_type": "write",
       "chain_callable": true,
-      "effects": ["make.webhook.sent"],
+      "effects": [
+        "make.webhook.sent"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -396,9 +616,21 @@
       },
       "return_schema": {
         "properties": {
-          "delivered": {"default": false, "title": "Delivered", "type": "boolean"},
-          "status_code": {"default": 0, "title": "Status Code", "type": "integer"},
-          "detail": {"default": "", "title": "Detail", "type": "string"}
+          "delivered": {
+            "default": false,
+            "title": "Delivered",
+            "type": "boolean"
+          },
+          "status_code": {
+            "default": 0,
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
         },
         "title": "WebhookDeliveryResult",
         "type": "object",
@@ -427,7 +659,7 @@
       "required": false,
       "write_mode": "both",
       "max_bytes": 512,
-      "scope": "app"
+      "scope": "user"
     },
     {
       "name": "make_zone",
@@ -435,7 +667,7 @@
       "required": false,
       "write_mode": "both",
       "max_bytes": 64,
-      "scope": "app"
+      "scope": "user"
     },
     {
       "name": "make_webhook_url",
@@ -443,7 +675,7 @@
       "required": false,
       "write_mode": "both",
       "max_bytes": 500,
-      "scope": "app"
+      "scope": "user"
     }
   ],
   "panels": [
