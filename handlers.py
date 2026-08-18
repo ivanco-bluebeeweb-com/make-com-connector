@@ -14,6 +14,7 @@ from schemas import (
     NoParams, ConnectMakeParams, ProviderConnection,
     MakeTeam, MakeTeamList, SelectTeamParams,
     ListScenariosParams, MakeScenario, MakeScenarioList,
+    RunScenarioParams, ScenarioRunResult,
 )
 
 _TEAM_SCOPE_MARKER = "team_scope_setting"
@@ -252,4 +253,62 @@ async def list_scenarios(ctx, params: ListScenariosParams) -> ActionResult:
     return ActionResult.success(
         MakeScenarioList(items=items, total=len(items)),
         summary=f"Found {len(items)} scenario(s).",
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 3: run_scenario -- explicit confirmation, real side effects in Make.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+@chat.function(
+    "run_scenario",
+    "Run one of your Make.com scenarios right now, by scenario_id (see "
+    "list_scenarios). This executes the scenario's real actions in Make "
+    "immediately -- sending emails, writing to connected apps, etc. There "
+    "is no dry-run or undo, so this always asks for confirm=true first.",
+    action_type="write",
+    chain_callable=True,
+    data_model=ScenarioRunResult,
+    event="make-com-connector.run_scenario",
+    effects=["make.scenario.run"],
+)
+async def run_scenario(ctx, params: RunScenarioParams) -> ActionResult:
+    """Gated on an explicit `confirm`, same pattern as Trello's delete_board:
+    a scenario run is a real action in a real external system (Make), with
+    whatever side effects that scenario is built to have -- there is no way
+    for this connector to know if those are reversible, so it never assumes
+    they are."""
+    if not params.confirm:
+        return ActionResult.error(
+            "Running a Make scenario executes its real actions right now "
+            "(sending emails, writing to connected apps, etc.) with no "
+            "dry-run or undo. Pass confirm=true if that is really the intent.",
+            code="MAKE_CONFIRM_REQUIRED",
+        )
+
+    token, zone = await _get_credentials(ctx)
+    if not (token and zone):
+        return ActionResult.error(
+            "Make.com isn't connected yet. Run connect_make first.",
+            code="MAKE_NOT_CONNECTED",
+        )
+
+    try:
+        result = await mc.run_scenario(ctx, token, zone, params.scenario_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+
+    execution = result.get("executions") or [{}]
+    first = execution[0] if execution else {}
+    status = first.get("status", "") or result.get("status", "")
+    execution_id = str(first.get("id", "") or result.get("executionId", ""))
+
+    return ActionResult.success(
+        ScenarioRunResult(
+            scenario_id=params.scenario_id,
+            execution_id=execution_id,
+            status=str(status),
+        ),
+        summary=f"Ran scenario {params.scenario_id} (status: {status or 'submitted'}).",
     )

@@ -76,3 +76,24 @@ class MakeScenario(sdl.Entity):
 
 class MakeScenarioList(sdl.EntityList[MakeScenario]):
     pass
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 3: run_scenario -- explicit confirmation, real side effects in Make.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+class RunScenarioParams(BaseModel):
+    scenario_id: int = Field(..., description="Make scenario id to run now (see list_scenarios).")
+    confirm: bool = Field(
+        False, description="Must be true. Running a scenario executes its real "
+                           "actions in Make right now (sending emails, writing to "
+                           "connected apps, etc.) -- there is no dry-run or undo.")
+
+
+class ScenarioRunResult(sdl.Entity):
+    id: str = ""
+    title: str = ""
+    scenario_id: int = 0
+    execution_id: str = ""
+    status: str = ""

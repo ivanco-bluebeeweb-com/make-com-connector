@@ -87,17 +87,29 @@ def _team_picker_card(teams: list[dict]) -> ui.UINode:
     )
 
 
-def _scenario_row(s: dict) -> ui.UINode:
+def _scenario_item(s: dict) -> ui.UINode:
     if s.get("is_invalid"):
         badge = ui.Badge(label="Invalid", color="red")
     elif s.get("is_active"):
         badge = ui.Badge(label="Active", color="green")
     else:
         badge = ui.Badge(label="Paused", color="gray")
-    return ui.Stack(direction="h", gap=2, align="center", justify="between", children=[
-        ui.Text(s.get("title", "")),
-        badge,
-    ])
+    scenario_id = s.get("scenario_id", 0)
+    return ui.ListItem(
+        id=str(scenario_id),
+        title=s.get("title", ""),
+        badge=badge,
+        actions=[
+            {
+                "icon": "Play",
+                "on_click": ui.Call("run_scenario", scenario_id=scenario_id, confirm=True),
+                "confirm": (
+                    "Run this scenario now? It executes its real actions in "
+                    "Make immediately -- there is no dry-run or undo."
+                ),
+            },
+        ],
+    )
 
 
 def _scenarios_card(scenarios: list[dict]) -> ui.UINode:
@@ -109,9 +121,7 @@ def _scenarios_card(scenarios: list[dict]) -> ui.UINode:
         )
     return ui.Card(
         title="Your scenarios",
-        content=ui.Stack(direction="v", gap=2, children=[
-            _scenario_row(s) for s in scenarios
-        ]),
+        content=ui.List(items=[_scenario_item(s) for s in scenarios]),
     )
 
 
@@ -160,7 +170,8 @@ async def make_connect_panel(ctx, **kwargs) -> object:
             ctx, token, zone, team_id=team_id, organization_id=None, limit=50, offset=0,
         )
         scenarios = [
-            {"title": s.get("name", ""), "is_active": bool(s.get("isActive")),
+            {"title": s.get("name", ""), "scenario_id": s.get("id", 0),
+             "is_active": bool(s.get("isActive")),
              "is_invalid": bool(s.get("isinvalid"))}
             for s in rows
         ]

@@ -230,6 +230,49 @@
       "long_running": false,
       "scopes": [],
       "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "run_scenario",
+      "description": "Run one of your Make.com scenarios right now, by scenario_id (see list_scenarios). This executes the scenario's real actions in Make immediately -- sending emails, writing to connected apps, etc. There is no dry-run or undo, so this always asks for confirm=true first.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": ["make.scenario.run"],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Make scenario id to run now (see list_scenarios).",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "confirm": {
+            "default": false,
+            "description": "Must be true. Running a scenario executes its real actions in Make right now (sending emails, writing to connected apps, etc.) -- there is no dry-run or undo.",
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": ["scenario_id"],
+        "title": "RunScenarioParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {"default": "", "title": "Id", "type": "string"},
+          "title": {"default": "", "title": "Title", "type": "string"},
+          "scenario_id": {"default": 0, "title": "Scenario Id", "type": "integer"},
+          "execution_id": {"default": "", "title": "Execution Id", "type": "string"},
+          "status": {"default": "", "title": "Status", "type": "string"}
+        },
+        "title": "ScenarioRunResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.run_scenario",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
     }
   ],
   "signals": [],
