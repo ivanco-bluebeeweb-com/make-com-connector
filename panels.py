@@ -18,6 +18,20 @@ PRE-PANEL CHECKLIST pass:
     (same proven pattern as yt_connect_dialog / wp_ssh_dialog)  OK
   - ui.Form does not submit pre-set value= fields -- token is user-typed,
     not pre-filled, so no hidden-context workaround needed        OK
+
+SIDEBAR CONTENT SECTIONS -- NOT wrapped in ui.Card.
+  Only the connect/connected block at the top is a genuine Card (it's a
+  single form/status widget, not a list). Every section below it that
+  lists several items of the same kind (team picker, scenarios, webhook
+  status) renders as a plain ui.Stack with a ui.Divider() between
+  sections -- no card padding/border/background per section. This is a
+  deliberate correction: rendering repeated list-like content as one
+  ui.Card per row/section produces visible box-in-a-box padding and no
+  separator, which reads as heavier and less scannable than a flat list
+  with dividers. See Docs/session-notes -- flagged as a platform gap:
+  the raw ListItem/List primitives don't give a left-sidebar "plain
+  divided sections" layout without reaching for Card, so Card gets
+  reached for out of habit even where a divider is what's wanted.
 """
 from __future__ import annotations
 
@@ -67,24 +81,33 @@ def _connect_card() -> ui.UINode:
     )
 
 
-def _team_picker_card(teams: list[dict]) -> ui.UINode:
+def _team_picker_section(teams: list[dict]) -> ui.UINode:
+    """Plain section, no Card wrapper -- a Divider above separates it
+    from whatever came before (the connected status)."""
     if not teams:
-        return ui.Alert(
-            title="No teams found",
-            message="Your Make account has no teams to select from yet.",
-            type="warning",
-        )
-    return ui.Card(
-        title="Pick a team",
-        subtitle="Make scopes scenarios by team -- choose which one to show",
-        content=ui.Stack(direction="v", gap=2, children=[
+        return ui.Stack(direction="v", gap=2, children=[
+            ui.Divider(),
+            ui.Alert(
+                title="No teams found",
+                message="Your Make account has no teams to select from yet.",
+                type="warning",
+            ),
+        ])
+    return ui.Stack(direction="v", gap=2, children=[
+        ui.Divider(),
+        ui.Text("Pick a team", variant="heading"),
+        ui.Text(
+            "Make scopes scenarios by team -- choose which one to show",
+            variant="caption",
+        ),
+        *[
             ui.Button(
                 t.get("title", f"Team {t.get('id')}"), variant="secondary", size="sm",
                 on_click=ui.Call("select_team", team_id=int(t["id"])),
             )
             for t in teams
-        ]),
-    )
+        ],
+    ])
 
 
 def _scenario_item(s: dict) -> ui.UINode:
@@ -125,38 +148,45 @@ def _scenario_item(s: dict) -> ui.UINode:
     )
 
 
-def _scenarios_card(scenarios: list[dict]) -> ui.UINode:
+def _scenarios_section(scenarios: list[dict]) -> ui.UINode:
+    """Plain section, no Card wrapper. ui.List already renders its own
+    ListItems with a divider between rows -- that's the separator asked
+    for, not another layer of card padding around the whole list."""
     if not scenarios:
-        return ui.Alert(
-            title="No scenarios yet",
-            message="This team has no scenarios, or none matched the current page.",
-            type="info",
-        )
-    return ui.Card(
-        title="Your scenarios",
-        content=ui.List(items=[_scenario_item(s) for s in scenarios]),
-    )
+        return ui.Stack(direction="v", gap=2, children=[
+            ui.Divider(),
+            ui.Alert(
+                title="No scenarios yet",
+                message="This team has no scenarios, or none matched the current page.",
+                type="info",
+            ),
+        ])
+    return ui.Stack(direction="v", gap=2, children=[
+        ui.Divider(),
+        ui.Text("Your scenarios", variant="heading"),
+        ui.List(items=[_scenario_item(s) for s in scenarios]),
+    ])
 
 
-def _webhook_card(configured: bool) -> ui.UINode:
+def _webhook_section(configured: bool) -> ui.UINode:
     """Independent of connect_make -- this is a Make Custom Webhook trigger
     URL the user pastes here so other Imperal apps/automations can fire a
-    Make scenario via send_webhook_event."""
+    Make scenario via send_webhook_event. Plain section, no Card wrapper."""
     if configured:
-        return ui.Card(
-            title="Outgoing webhook",
-            content=ui.Stack(direction="v", gap=2, children=[
-                ui.Badge(label="Configured", color="green"),
-                ui.Button(
-                    "Clear webhook", variant="secondary", size="sm",
-                    on_click=ui.Call("set_outgoing_webhook", webhook_url=""),
-                ),
-            ]),
-        )
-    return ui.Card(
-        title="Outgoing webhook",
-        subtitle="Send events from Imperal to a Make scenario",
-        content=ui.Form(
+        return ui.Stack(direction="v", gap=2, children=[
+            ui.Divider(),
+            ui.Text("Outgoing webhook", variant="heading"),
+            ui.Badge(label="Configured", color="green"),
+            ui.Button(
+                "Clear webhook", variant="secondary", size="sm",
+                on_click=ui.Call("set_outgoing_webhook", webhook_url=""),
+            ),
+        ])
+    return ui.Stack(direction="v", gap=2, children=[
+        ui.Divider(),
+        ui.Text("Outgoing webhook", variant="heading"),
+        ui.Text("Send events from Imperal to a Make scenario", variant="caption"),
+        ui.Form(
             children=[
                 ui.Input(
                     placeholder="Paste a Make Custom Webhook URL...",
@@ -166,7 +196,7 @@ def _webhook_card(configured: bool) -> ui.UINode:
             submit_label="Save webhook",
             action="set_outgoing_webhook",
         ),
-    )
+    ])
 
 
 @ext.panel("make_connect", slot="left", title="Make.com", icon="🧩",
@@ -189,7 +219,7 @@ async def make_connect_panel(ctx, **kwargs) -> object:
                 message="Connect your Make.com account to see and run your scenarios.",
                 type="info",
             ),
-            _webhook_card(webhook_configured),
+            _webhook_section(webhook_configured),
         ])
 
     children: list[ui.UINode] = [header, _connected_card(f"Zone: {zone}")]
@@ -208,7 +238,7 @@ async def make_connect_panel(ctx, **kwargs) -> object:
         except mc.ProviderError as exc:
             children.append(ui.Alert(title="Couldn't load teams", message=str(exc), type="danger"))
             raw_teams = []
-        children.append(_team_picker_card(raw_teams))
+        children.append(_team_picker_section(raw_teams))
         return ui.Stack(direction="v", gap=4, children=children)
 
     scenarios: list[dict] = []
@@ -225,8 +255,8 @@ async def make_connect_panel(ctx, **kwargs) -> object:
     except mc.ProviderError as exc:
         children.append(ui.Alert(title="Couldn't load scenarios", message=str(exc), type="danger"))
 
-    children.append(_scenarios_card(scenarios))
-    children.append(_webhook_card(webhook_configured))
+    children.append(_scenarios_section(scenarios))
+    children.append(_webhook_section(webhook_configured))
     return ui.Stack(direction="v", gap=4, children=children)
 
 
