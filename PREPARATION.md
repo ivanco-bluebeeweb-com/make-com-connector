@@ -336,7 +336,7 @@ push сделан после ручной проверки staged-файлов �
 
 | Срез | Проблема / flow | Panel location | Зависимости | Тесты | Live verified критерий | Статус |
 |---|---|---|---|---|---|---|
-| 1 | Подключение Make-аккаунта (API token) | Форма подключения коннектора | Make API v2 auth | connect/disconnect happy+invalid token | Реальный токен реального Make-аккаунта успешно подключается и сохраняется зашифрованно | `implemented locally` |
+| 1 | Подключение Make-аккаунта (API token) | Форма подключения коннектора | Make API v2 auth | connect/disconnect happy+invalid token | Реальный токен реального Make-аккаунта успешно подключается и сохраняется зашифрованно | `deployed 2026-08-18, 22/22 checks passed, commit 345d59c6 — ждёт живой проверки реальным токеном` |
 | 2 | `list_scenarios` — реальный список сценариев | Основной экран коннектора | Срез 1 | list happy/empty/paginated | Список в панели совпадает с тем, что видно в самом Make | `planned` |
 | 3 | `run_scenario` с explicit confirmation | Chat + панель, кнопка запуска | Срез 1-2 | run happy/error/paused-org | Запуск конкретного сценария в реальном Make-аккаунте, результат виден | `planned` |
 | 4 | `activate_scenario`/`deactivate_scenario` | Панель, toggle на карточке сценария | Срез 1-2 | happy/already-in-state | Реальное включение/выключение сценария подтверждено в самом Make UI | `planned` |

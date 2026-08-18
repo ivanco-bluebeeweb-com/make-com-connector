@@ -25,6 +25,7 @@ from imperal_sdk import ui
 
 from app import ext
 import handlers as h
+import make_client as mc
 
 
 def _connected_card(detail: str) -> ui.UINode:
@@ -66,6 +67,54 @@ def _connect_card() -> ui.UINode:
     )
 
 
+def _team_picker_card(teams: list[dict]) -> ui.UINode:
+    if not teams:
+        return ui.Alert(
+            title="No teams found",
+            message="Your Make account has no teams to select from yet.",
+            type="warning",
+        )
+    return ui.Card(
+        title="Pick a team",
+        subtitle="Make scopes scenarios by team -- choose which one to show",
+        content=ui.Stack(direction="v", gap=2, children=[
+            ui.Button(
+                t.get("title", f"Team {t.get('id')}"), variant="secondary", size="sm",
+                on_click=ui.Call("select_team", params={"team_id": int(t["id"])}),
+            )
+            for t in teams
+        ]),
+    )
+
+
+def _scenario_row(s: dict) -> ui.UINode:
+    if s.get("is_invalid"):
+        badge = ui.Badge(label="Invalid", color="red")
+    elif s.get("is_active"):
+        badge = ui.Badge(label="Active", color="green")
+    else:
+        badge = ui.Badge(label="Paused", color="gray")
+    return ui.Stack(direction="h", gap=2, align="center", justify="between", children=[
+        ui.Text(s.get("title", "")),
+        badge,
+    ])
+
+
+def _scenarios_card(scenarios: list[dict]) -> ui.UINode:
+    if not scenarios:
+        return ui.Alert(
+            title="No scenarios yet",
+            message="This team has no scenarios, or none matched the current page.",
+            type="info",
+        )
+    return ui.Card(
+        title="Your scenarios",
+        content=ui.Stack(direction="v", gap=2, children=[
+            _scenario_row(s) for s in scenarios
+        ]),
+    )
+
+
 @ext.panel("make_connect", slot="left", title="Make.com", icon="🧩",
            default_width=320, min_width=260, max_width=420)
 async def make_connect_panel(ctx, **kwargs) -> object:
@@ -74,16 +123,51 @@ async def make_connect_panel(ctx, **kwargs) -> object:
 
     header = ui.Header(text="Make.com", level=2,
                         subtitle="Run and monitor your Make scenarios from Imperal")
-    card = _connected_card(f"Zone: {zone}") if connected else _connect_card()
 
-    children: list[ui.UINode] = [header, card]
     if not connected:
-        children.append(ui.Alert(
-            title="Not connected yet",
-            message="Connect your Make.com account to see and run your scenarios.",
-            type="info",
-        ))
+        return ui.Stack(direction="v", gap=4, children=[
+            header,
+            _connect_card(),
+            ui.Alert(
+                title="Not connected yet",
+                message="Connect your Make.com account to see and run your scenarios.",
+                type="info",
+            ),
+        ])
 
+    children: list[ui.UINode] = [header, _connected_card(f"Zone: {zone}")]
+
+    team_id = await h._get_team_scope(ctx)
+    if not team_id:
+        try:
+            orgs = await mc.list_organizations(ctx, token, zone)
+            raw_teams: list[dict] = []
+            for org in orgs:
+                org_id = org.get("id")
+                if org_id is None:
+                    continue
+                for t in await mc.list_teams(ctx, token, zone, org_id):
+                    raw_teams.append({"id": t.get("id"), "title": t.get("name", "")})
+        except mc.ProviderError as exc:
+            children.append(ui.Alert(title="Couldn't load teams", message=str(exc), type="danger"))
+            raw_teams = []
+        children.append(_team_picker_card(raw_teams))
+        return ui.Stack(direction="v", gap=4, children=children)
+
+    scenarios: list[dict] = []
+    try:
+        rows, _pg = await mc.list_scenarios(
+            ctx, token, zone, team_id=team_id, organization_id=None, limit=50, offset=0,
+        )
+        scenarios = [
+            {"title": s.get("name", ""), "is_active": bool(s.get("isActive")),
+             "is_invalid": bool(s.get("isinvalid"))}
+            for s in rows
+        ]
+    except mc.ProviderError as exc:
+        children.append(ui.Alert(title="Couldn't load scenarios", message=str(exc), type="danger"))
+
+    children.append(_scenarios_card(scenarios))
     return ui.Stack(direction="v", gap=4, children=children)
 
 

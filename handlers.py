@@ -10,7 +10,13 @@ from imperal_sdk import ActionResult
 
 import make_client as mc
 from app import ext, chat
-from schemas import NoParams, ConnectMakeParams, ProviderConnection
+from schemas import (
+    NoParams, ConnectMakeParams, ProviderConnection,
+    MakeTeam, MakeTeamList, SelectTeamParams,
+    ListScenariosParams, MakeScenario, MakeScenarioList,
+)
+
+_TEAM_SCOPE_MARKER = "team_scope_setting"
 
 
 async def _get_credentials(ctx) -> tuple[str, str]:
@@ -18,6 +24,26 @@ async def _get_credentials(ctx) -> tuple[str, str]:
     token = await ctx.secrets.get("make_api_token")
     zone = await ctx.secrets.get("make_zone")
     return token or "", zone or ""
+
+
+async def _get_team_scope(ctx) -> int | None:
+    """team_id isn't sensitive (just an account-scoped integer, same
+    sensitivity class as a project id), so it lives in ctx.store like
+    DataForSEO's sandbox-mode marker -- not in ctx.secrets."""
+    page = await ctx.store.query("app_settings", where={"kind": _TEAM_SCOPE_MARKER}, limit=1)
+    if page.data:
+        team_id = page.data[0].data.get("team_id")
+        return int(team_id) if team_id else None
+    return None
+
+
+async def _set_team_scope(ctx, team_id: int) -> None:
+    payload = {"kind": _TEAM_SCOPE_MARKER, "team_id": team_id}
+    page = await ctx.store.query("app_settings", where={"kind": _TEAM_SCOPE_MARKER}, limit=1)
+    if page.data:
+        await ctx.store.update("app_settings", page.data[0].id, payload)
+    else:
+        await ctx.store.create("app_settings", payload)
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -105,4 +131,125 @@ async def get_make_connection(ctx, params: NoParams) -> ActionResult:
             detail=f"Connected ({zone})" if connected else "Not connected -- run connect_make",
         ),
         summary="Make.com is connected." if connected else "Make.com is not connected.",
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 2: scenarios (list) -- team scope resolution + listing
+# ──────────────────────────────────────────────────────────────────────────
+
+
+@chat.function(
+    "list_make_teams",
+    "List the Make.com teams your connected account belongs to. Needed "
+    "once to pick which team's scenarios to show -- Make requires a "
+    "specific team (or organization) scope, it has no single global "
+    "scenario list.",
+    action_type="read",
+    chain_callable=True,
+    data_model=MakeTeamList,
+)
+async def list_make_teams(ctx, params: NoParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not (token and zone):
+        return ActionResult.error(
+            "Make.com isn't connected yet. Run connect_make first.",
+            code="MAKE_NOT_CONNECTED",
+        )
+    try:
+        orgs = await mc.list_organizations(ctx, token, zone)
+        teams: list[dict] = []
+        for org in orgs:
+            org_id = org.get("id")
+            if org_id is None:
+                continue
+            org_teams = await mc.list_teams(ctx, token, zone, org_id)
+            for t in org_teams:
+                t["organizationId"] = org_id
+            teams.extend(org_teams)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+
+    items = [
+        MakeTeam(
+            id=str(t.get("id", "")),
+            title=t.get("name", ""),
+            organization_id=t.get("organizationId", 0),
+        )
+        for t in teams
+    ]
+    return ActionResult.success(
+        MakeTeamList(items=items, total=len(items)),
+        summary=f"Found {len(items)} Make team(s).",
+    )
+
+
+@chat.function(
+    "select_team",
+    "Pick which Make.com team's scenarios to show. Run list_make_teams "
+    "first to see the available team ids. This is a standing choice -- "
+    "it stays selected until changed again.",
+    action_type="write",
+    chain_callable=True,
+    data_model=ProviderConnection,
+    event="make-com-connector.select_team",
+    effects=["make.team_scope.changed"],
+)
+async def select_team(ctx, params: SelectTeamParams) -> ActionResult:
+    await _set_team_scope(ctx, params.team_id)
+    return ActionResult.success(
+        ProviderConnection(connected=True, detail=f"Scoped to team {params.team_id}"),
+        summary=f"Now showing scenarios for team {params.team_id}.",
+        refresh_panels=["make_connect"],
+    )
+
+
+@chat.function(
+    "list_scenarios",
+    "List your Make.com scenarios for the selected team -- name, active/ "
+    "paused/invalid state, and last edit time. Run connect_make and "
+    "select_team first if you haven't yet.",
+    action_type="read",
+    chain_callable=True,
+    data_model=MakeScenarioList,
+)
+async def list_scenarios(ctx, params: ListScenariosParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not (token and zone):
+        return ActionResult.error(
+            "Make.com isn't connected yet. Run connect_make first.",
+            code="MAKE_NOT_CONNECTED",
+        )
+    team_id = await _get_team_scope(ctx)
+    if not team_id:
+        return ActionResult.error(
+            "No team selected yet. Run list_make_teams then select_team first.",
+            code="MAKE_NO_TEAM_SCOPE",
+        )
+    try:
+        rows, _pg = await mc.list_scenarios(
+            ctx, token, zone, team_id=team_id, organization_id=None,
+            limit=params.limit, offset=params.offset,
+        )
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+
+    items = [
+        MakeScenario(
+            id=str(s.get("id", "")),
+            title=s.get("name", ""),
+            scenario_id=s.get("id", 0),
+            team_id=s.get("teamId", 0),
+            is_active=bool(s.get("isActive")),
+            is_paused=bool(s.get("isPaused")),
+            is_invalid=bool(s.get("isinvalid")),
+            folder_id=s.get("folderId"),
+            last_edit=s.get("lastEdit", ""),
+            scheduling_type=(s.get("scheduling") or {}).get("type", ""),
+        )
+        for s in rows
+    ]
+    return ActionResult.success(
+        MakeScenarioList(items=items, total=len(items)),
+        summary=f"Found {len(items)} scenario(s).",
     )

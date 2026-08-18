@@ -18,9 +18,7 @@
       "description": "Connect Make.com by saving your own API token, after checking it actually works. Create the token in Make: avatar (bottom-left) -> Profile -> API tab -> Add token. The account's zone (eu1/eu2/us1/us2) is auto-detected -- you don't need to know it.",
       "action_type": "write",
       "chain_callable": true,
-      "effects": [
-        "make.provider.connected"
-      ],
+      "effects": ["make.provider.connected"],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -36,26 +34,10 @@
       },
       "return_schema": {
         "properties": {
-          "id": {
-            "default": "",
-            "title": "Id",
-            "type": "string"
-          },
-          "title": {
-            "default": "",
-            "title": "Title",
-            "type": "string"
-          },
-          "connected": {
-            "default": false,
-            "title": "Connected",
-            "type": "boolean"
-          },
-          "detail": {
-            "default": "",
-            "title": "Detail",
-            "type": "string"
-          }
+          "id": {"default": "", "title": "Id", "type": "string"},
+          "title": {"default": "", "title": "Title", "type": "string"},
+          "connected": {"default": false, "title": "Connected", "type": "boolean"},
+          "detail": {"default": "", "title": "Detail", "type": "string"}
         },
         "title": "ProviderConnection",
         "type": "object",
@@ -72,9 +54,7 @@
       "description": "Disconnect Make.com: deletes the saved API token and zone. Existing scenarios in your Make account are never touched.",
       "action_type": "write",
       "chain_callable": true,
-      "effects": [
-        "make.provider.disconnected"
-      ],
+      "effects": ["make.provider.disconnected"],
       "id_projection": "",
       "params_schema": {
         "properties": {},
@@ -83,26 +63,10 @@
       },
       "return_schema": {
         "properties": {
-          "id": {
-            "default": "",
-            "title": "Id",
-            "type": "string"
-          },
-          "title": {
-            "default": "",
-            "title": "Title",
-            "type": "string"
-          },
-          "connected": {
-            "default": false,
-            "title": "Connected",
-            "type": "boolean"
-          },
-          "detail": {
-            "default": "",
-            "title": "Detail",
-            "type": "string"
-          }
+          "id": {"default": "", "title": "Id", "type": "string"},
+          "title": {"default": "", "title": "Title", "type": "string"},
+          "connected": {"default": false, "title": "Connected", "type": "boolean"},
+          "detail": {"default": "", "title": "Detail", "type": "string"}
         },
         "title": "ProviderConnection",
         "type": "object",
@@ -128,30 +92,138 @@
       },
       "return_schema": {
         "properties": {
-          "id": {
-            "default": "",
-            "title": "Id",
-            "type": "string"
-          },
-          "title": {
-            "default": "",
-            "title": "Title",
-            "type": "string"
-          },
-          "connected": {
-            "default": false,
-            "title": "Connected",
-            "type": "boolean"
-          },
-          "detail": {
-            "default": "",
-            "title": "Detail",
-            "type": "string"
-          }
+          "id": {"default": "", "title": "Id", "type": "string"},
+          "title": {"default": "", "title": "Title", "type": "string"},
+          "connected": {"default": false, "title": "Connected", "type": "boolean"},
+          "detail": {"default": "", "title": "Detail", "type": "string"}
         },
         "title": "ProviderConnection",
         "type": "object",
         "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "list_make_teams",
+      "description": "List the Make.com teams your connected account belongs to. Needed once to pick which team's scenarios to show -- Make requires a specific team (or organization) scope, it has no single global scenario list.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {},
+        "title": "NoParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "MakeTeam": {
+            "properties": {
+              "id": {"default": "", "title": "Id", "type": "string"},
+              "title": {"default": "", "title": "Title", "type": "string"},
+              "organization_id": {"default": 0, "title": "Organization Id", "type": "integer"}
+            },
+            "title": "MakeTeam",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {"items": {"$ref": "#/$defs/MakeTeam"}, "title": "Items", "type": "array"},
+          "total": {"default": 0, "title": "Total", "type": "integer"}
+        },
+        "title": "MakeTeamList",
+        "type": "object",
+        "x-sdl": "entity_list"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "select_team",
+      "description": "Pick which Make.com team's scenarios to show. Run list_make_teams first to see the available team ids. This is a standing choice -- it stays selected until changed again.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": ["make.team_scope.changed"],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "team_id": {
+            "description": "Make team id to scope scenario listing to (see list_make_teams).",
+            "title": "Team Id",
+            "type": "integer"
+          }
+        },
+        "required": ["team_id"],
+        "title": "SelectTeamParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {"default": "", "title": "Id", "type": "string"},
+          "title": {"default": "", "title": "Title", "type": "string"},
+          "connected": {"default": false, "title": "Connected", "type": "boolean"},
+          "detail": {"default": "", "title": "Detail", "type": "string"}
+        },
+        "title": "ProviderConnection",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.select_team",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "list_scenarios",
+      "description": "List your Make.com scenarios for the selected team -- name, active/paused/invalid state, and last edit time. Run connect_make and select_team first if you haven't yet.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "limit": {"default": 50, "maximum": 200, "minimum": 1, "title": "Limit", "type": "integer"},
+          "offset": {"default": 0, "minimum": 0, "title": "Offset", "type": "integer"}
+        },
+        "title": "ListScenariosParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "MakeScenario": {
+            "properties": {
+              "id": {"default": "", "title": "Id", "type": "string"},
+              "title": {"default": "", "title": "Title", "type": "string"},
+              "scenario_id": {"default": 0, "title": "Scenario Id", "type": "integer"},
+              "team_id": {"default": 0, "title": "Team Id", "type": "integer"},
+              "is_active": {"default": false, "title": "Is Active", "type": "boolean"},
+              "is_paused": {"default": false, "title": "Is Paused", "type": "boolean"},
+              "is_invalid": {"default": false, "title": "Is Invalid", "type": "boolean"},
+              "folder_id": {"default": null, "title": "Folder Id", "type": "integer"},
+              "last_edit": {"default": "", "title": "Last Edit", "type": "string"},
+              "scheduling_type": {"default": "", "title": "Scheduling Type", "type": "string"}
+            },
+            "title": "MakeScenario",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {"items": {"$ref": "#/$defs/MakeScenario"}, "title": "Items", "type": "array"},
+          "total": {"default": 0, "title": "Total", "type": "integer"}
+        },
+        "title": "MakeScenarioList",
+        "type": "object",
+        "x-sdl": "entity_list"
       },
       "event": "",
       "background": false,
