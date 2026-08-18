@@ -1,0 +1,170 @@
+"""Make.com API v2 client -- token auth, zone auto-discovery, and thin
+wrappers around the scenario endpoints this connector exposes.
+
+WHY ZONE AUTO-DISCOVERY, NOT A USER-ENTERED FIELD.
+
+Per Make's own "API structure" doc, every request goes to
+`https://{zone}/api/v2/{endpoint}` where `{zone}` is account-specific
+(eu1.make.com, eu2.make.com, us1.make.com, us2.make.com, and celonis
+on-prem variants) -- there is no single global host, and a token from one
+zone is rejected outright by another zone's host. Asking a first-time
+user to go find their own zone in the browser URL bar is unnecessary
+friction, so `discover_zone` probes the known public zones with the
+cheap, side-effect-free `GET /users/me` call until one accepts the
+token, then the caller persists the winning zone so every later call
+skips straight to it.
+
+WHY `Authorization: Token <token>`, NOT Bearer/Basic.
+
+Make's own docs are explicit: the header value is the literal string
+`Token your-api-token` (not `Bearer ...`) -- a different scheme from
+DataForSEO's Basic auth or Magnific's custom header, so it is built here
+rather than assumed.
+"""
+from __future__ import annotations
+
+# Public Make zones, per developers.make.com/api-documentation/
+# getting-started/api-structure. Tried in this order when the zone is not
+# yet known -- eu1 first since it's Make's original/most common zone.
+KNOWN_ZONES: list[str] = [
+    "eu1.make.com",
+    "eu2.make.com",
+    "us1.make.com",
+    "us2.make.com",
+]
+
+
+class ProviderError(Exception):
+    def __init__(self, message: str, code: str):
+        super().__init__(message)
+        self.code = code
+
+
+def _headers(token: str) -> dict:
+    return {"Authorization": f"Token {token}", "Accept": "*/*"}
+
+
+def _check_status(resp, action: str) -> dict:
+    if resp.status_code == 401 or resp.status_code == 403:
+        raise ProviderError(
+            f"Make {action} failed: token rejected (HTTP {resp.status_code})",
+            "MAKE_AUTH_ERROR",
+        )
+    if resp.status_code >= 400:
+        raise ProviderError(
+            f"Make {action} failed: HTTP {resp.status_code}", "MAKE_HTTP_ERROR",
+        )
+    return resp.body if isinstance(resp.body, dict) else {}
+
+
+async def discover_zone(ctx, token: str) -> tuple[str, dict]:
+    """Try each known public zone's GET /users/me with this token until one
+    accepts it. Returns (winning zone host, authUser dict from that same
+    response -- no second round-trip needed). Raises ProviderError if none
+    of the known public zones accept the token -- e.g. an on-prem/custom
+    zone (eu1.make.celonis.com etc.) that the user must supply manually via
+    the platform Secrets screen instead."""
+    last_error: ProviderError | None = None
+    for zone in KNOWN_ZONES:
+        resp = await ctx.http.get(
+            f"https://{zone}/api/v2/users/me", headers=_headers(token),
+        )
+        if resp.status_code == 200:
+            body = resp.body if isinstance(resp.body, dict) else {}
+            return zone, (body.get("authUser") or {})
+        if resp.status_code in (401, 403):
+            last_error = ProviderError(
+                f"Make token rejected by every known zone ({', '.join(KNOWN_ZONES)}). "
+                "If your organization uses a custom/on-prem zone, that isn't "
+                "auto-detected yet -- check your Make dashboard's URL bar.",
+                "MAKE_AUTH_ERROR",
+            )
+    raise last_error or ProviderError("Could not reach any known Make zone", "MAKE_NETWORK_ERROR")
+
+
+async def get_current_user(ctx, token: str, zone: str) -> dict:
+    resp = await ctx.http.get(f"https://{zone}/api/v2/users/me", headers=_headers(token))
+    body = _check_status(resp, "account check")
+    return body.get("authUser") or {}
+
+
+async def list_scenarios(
+    ctx, token: str, zone: str, *, team_id: int | None, organization_id: int | None,
+    limit: int = 100, offset: int = 0,
+) -> tuple[list[dict], dict]:
+    """GET /scenarios -- exactly one of team_id/organization_id must be set,
+    per Make's own API (the two are mutually exclusive filters)."""
+    if not team_id and not organization_id:
+        raise ProviderError(
+            "list_scenarios needs either a team_id or an organization_id",
+            "MAKE_MISSING_SCOPE",
+        )
+    params: dict = {"limit": limit, "offset": offset}
+    if team_id:
+        params["teamId"] = team_id
+    else:
+        params["organizationId"] = organization_id
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/scenarios", headers=_headers(token), params=params,
+    )
+    body = _check_status(resp, "list scenarios")
+    return body.get("scenarios") or [], body.get("pg") or {}
+
+
+async def get_scenario(ctx, token: str, zone: str, scenario_id: int) -> dict:
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}", headers=_headers(token),
+    )
+    body = _check_status(resp, "get scenario")
+    return body.get("scenario") or {}
+
+
+async def start_scenario(ctx, token: str, zone: str, scenario_id: int) -> dict:
+    """POST /scenarios/{id}/start -- activates (schedules) a scenario."""
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/start", headers=_headers(token),
+    )
+    body = _check_status(resp, "activate scenario")
+    return body.get("scenario") or {}
+
+
+async def stop_scenario(ctx, token: str, zone: str, scenario_id: int) -> dict:
+    """POST /scenarios/{id}/stop -- deactivates a scenario."""
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/stop", headers=_headers(token),
+    )
+    body = _check_status(resp, "deactivate scenario")
+    return body.get("scenario") or {}
+
+
+async def run_scenario(
+    ctx, token: str, zone: str, scenario_id: int, *,
+    data: dict | None = None, responsive: bool = True,
+) -> dict:
+    """POST /scenarios/{id}/run. `responsive=True` waits for the run to
+    finish (up to Make's own 40s cap) and returns status+executionId in one
+    round-trip -- the right default for a chat-turn action where the user
+    is waiting to see the result, per Make's own docs on the responsive flag."""
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/run",
+        headers={**_headers(token), "Content-Type": "application/json"},
+        json={"data": data or {}, "responsive": responsive},
+    )
+    return _check_status(resp, "run scenario")
+
+
+async def list_teams(ctx, token: str, zone: str, organization_id: int) -> list[dict]:
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/teams", headers=_headers(token),
+        params={"organizationId": organization_id},
+    )
+    body = _check_status(resp, "list teams")
+    return body.get("teams") or []
+
+
+async def list_organizations(ctx, token: str, zone: str) -> list[dict]:
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/organizations", headers=_headers(token),
+    )
+    body = _check_status(resp, "list organizations")
+    return body.get("organizations") or []
