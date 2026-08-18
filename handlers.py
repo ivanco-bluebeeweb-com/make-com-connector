@@ -1940,6 +1940,12 @@ async def create_api_token(ctx, params: CreateApiTokenParams) -> ActionResult:
     effects=["make.api_token.deleted"],
 )
 async def delete_api_token(ctx, params: DeleteApiTokenParams) -> ActionResult:
+    if not params.confirm:
+        return ActionResult.error(
+            "Set confirm=true to delete this token -- anything using it "
+            "will stop working immediately.",
+            code="MAKE_CONFIRM_REQUIRED",
+        )
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
