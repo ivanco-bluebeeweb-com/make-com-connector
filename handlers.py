@@ -15,6 +15,7 @@ from schemas import (
     MakeTeam, MakeTeamList, SelectTeamParams,
     ListScenariosParams, MakeScenario, MakeScenarioList,
     RunScenarioParams, ScenarioRunResult,
+    SetScenarioActiveParams, ScenarioStateResult,
 )
 
 _TEAM_SCOPE_MARKER = "team_scope_setting"
@@ -311,4 +312,50 @@ async def run_scenario(ctx, params: RunScenarioParams) -> ActionResult:
             status=str(status),
         ),
         summary=f"Ran scenario {params.scenario_id} (status: {status or 'submitted'}).",
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 4: activate/deactivate scenario -- reversible toggle, no confirm gate.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+@chat.function(
+    "set_scenario_active",
+    "Activate (turn on/schedule) or deactivate (pause) a Make.com scenario "
+    "by scenario_id (see list_scenarios). Reversible -- flip it back any "
+    "time -- so unlike run_scenario this needs no confirmation.",
+    action_type="write",
+    chain_callable=True,
+    data_model=ScenarioStateResult,
+    event="make-com-connector.set_scenario_active",
+    effects=["make.scenario.state_changed"],
+)
+async def set_scenario_active(ctx, params: SetScenarioActiveParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not (token and zone):
+        return ActionResult.error(
+            "Make.com isn't connected yet. Run connect_make first.",
+            code="MAKE_NOT_CONNECTED",
+        )
+
+    try:
+        if params.active:
+            scenario = await mc.start_scenario(ctx, token, zone, params.scenario_id)
+        else:
+            scenario = await mc.stop_scenario(ctx, token, zone, params.scenario_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+
+    is_active = bool(scenario.get("isActive", params.active))
+    verb = "activated" if is_active else "deactivated"
+    return ActionResult.success(
+        ScenarioStateResult(
+            id=str(params.scenario_id),
+            title=scenario.get("name", ""),
+            scenario_id=params.scenario_id,
+            is_active=is_active,
+        ),
+        summary=f"Scenario {params.scenario_id} {verb}.",
+        refresh_panels=["make_connect"],
     )

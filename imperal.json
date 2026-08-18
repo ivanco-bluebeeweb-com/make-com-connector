@@ -273,6 +273,47 @@
       "long_running": false,
       "scopes": [],
       "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "set_scenario_active",
+      "description": "Activate (turn on/schedule) or deactivate (pause) a Make.com scenario by scenario_id (see list_scenarios). Reversible -- flip it back any time -- so unlike run_scenario this needs no confirmation.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": ["make.scenario.state_changed"],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Make scenario id to activate/deactivate (see list_scenarios).",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "active": {
+            "description": "True to activate (schedule/turn on) the scenario, False to deactivate (pause) it.",
+            "title": "Active",
+            "type": "boolean"
+          }
+        },
+        "required": ["scenario_id", "active"],
+        "title": "SetScenarioActiveParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {"default": "", "title": "Id", "type": "string"},
+          "title": {"default": "", "title": "Title", "type": "string"},
+          "scenario_id": {"default": 0, "title": "Scenario Id", "type": "integer"},
+          "is_active": {"default": false, "title": "Is Active", "type": "boolean"}
+        },
+        "title": "ScenarioStateResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.set_scenario_active",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
     }
   ],
   "signals": [],

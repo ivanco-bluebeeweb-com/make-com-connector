@@ -88,13 +88,25 @@ def _team_picker_card(teams: list[dict]) -> ui.UINode:
 
 
 def _scenario_item(s: dict) -> ui.UINode:
+    is_active = bool(s.get("is_active"))
     if s.get("is_invalid"):
         badge = ui.Badge(label="Invalid", color="red")
-    elif s.get("is_active"):
+    elif is_active:
         badge = ui.Badge(label="Active", color="green")
     else:
         badge = ui.Badge(label="Paused", color="gray")
     scenario_id = s.get("scenario_id", 0)
+    toggle_action = (
+        {
+            "icon": "Pause",
+            "on_click": ui.Call("set_scenario_active", scenario_id=scenario_id, active=False),
+        }
+        if is_active
+        else {
+            "icon": "PlayCircle",
+            "on_click": ui.Call("set_scenario_active", scenario_id=scenario_id, active=True),
+        }
+    )
     return ui.ListItem(
         id=str(scenario_id),
         title=s.get("title", ""),
@@ -108,6 +120,7 @@ def _scenario_item(s: dict) -> ui.UINode:
                     "Make immediately -- there is no dry-run or undo."
                 ),
             },
+            toggle_action,
         ],
     )
 

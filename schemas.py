@@ -97,3 +97,22 @@ class ScenarioRunResult(sdl.Entity):
     scenario_id: int = 0
     execution_id: str = ""
     status: str = ""
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 4: activate/deactivate scenario -- reversible toggle, no confirm gate.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+class SetScenarioActiveParams(BaseModel):
+    scenario_id: int = Field(..., description="Make scenario id to activate/deactivate (see list_scenarios).")
+    active: bool = Field(
+        ..., description="True to activate (schedule/turn on) the scenario, "
+                         "False to deactivate (pause) it.")
+
+
+class ScenarioStateResult(sdl.Entity):
+    id: str = ""
+    title: str = ""
+    scenario_id: int = 0
+    is_active: bool = False
