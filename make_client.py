@@ -168,3 +168,27 @@ async def list_organizations(ctx, token: str, zone: str) -> list[dict]:
     )
     body = _check_status(resp, "list organizations")
     return body.get("organizations") or []
+
+
+async def post_webhook(ctx, webhook_url: str, payload: dict) -> tuple[bool, int, str]:
+    """POST an arbitrary JSON payload to a Make Custom Webhook trigger URL.
+
+    Unlike every other call in this module, this does NOT go through
+    `https://{zone}/api/v2/...` with a bearer token -- a Custom Webhook
+    URL is its own secret (Make authenticates by knowing the URL, not by
+    header), per Make's own "Custom webhook" trigger docs. Returns
+    (delivered, status_code, detail) rather than raising, since a failed
+    delivery to the USER's own downstream scenario is an expected,
+    non-exceptional outcome the caller reports back, not a connector bug.
+    """
+    try:
+        resp = await ctx.http.post(
+            webhook_url, headers={"Content-Type": "application/json"}, json=payload,
+        )
+    except Exception as exc:  # network-level failure (DNS, timeout, refused)
+        return False, 0, f"Could not reach the webhook URL: {exc}"
+
+    status = getattr(resp, "status_code", 0)
+    if 200 <= status < 300:
+        return True, status, "Delivered."
+    return False, status, f"Make responded with HTTP {status}."

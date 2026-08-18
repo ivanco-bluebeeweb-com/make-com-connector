@@ -314,6 +314,101 @@
       "long_running": false,
       "scopes": [],
       "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "set_outgoing_webhook",
+      "description": "Save (or clear, with an empty webhook_url) the Make Custom Webhook trigger URL that send_webhook_event will POST to. Get this URL by adding a 'Custom Webhook' module as the first step of a Make scenario and copying its URL. This is independent of connect_make.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": ["make.webhook.configured"],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "webhook_url": {
+            "default": "",
+            "description": "The Custom Webhook trigger URL copied from a Make scenario (add a 'Custom Webhook' module, copy its URL). Leave empty to remove/disable it.",
+            "title": "Webhook Url",
+            "type": "string"
+          }
+        },
+        "title": "SetOutgoingWebhookParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "configured": {"default": false, "title": "Configured", "type": "boolean"},
+          "detail": {"default": "", "title": "Detail", "type": "string"}
+        },
+        "title": "OutgoingWebhookStatus",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.set_outgoing_webhook",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "get_outgoing_webhook_status",
+      "description": "Check whether an outgoing Make webhook URL is configured (does not reveal the URL itself).",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {},
+        "title": "NoParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "configured": {"default": false, "title": "Configured", "type": "boolean"},
+          "detail": {"default": "", "title": "Detail", "type": "string"}
+        },
+        "title": "OutgoingWebhookStatus",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "send_webhook_event",
+      "description": "Send an event payload to the configured Make webhook right now -- for other Imperal apps/automations to trigger a Make scenario. Run set_outgoing_webhook first if you haven't configured one yet.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": ["make.webhook.sent"],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "payload": {
+            "description": "JSON-serializable payload to POST to the configured Make webhook URL -- shape is whatever the receiving Make scenario expects.",
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "title": "SendWebhookEventParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "delivered": {"default": false, "title": "Delivered", "type": "boolean"},
+          "status_code": {"default": 0, "title": "Status Code", "type": "integer"},
+          "detail": {"default": "", "title": "Detail", "type": "string"}
+        },
+        "title": "WebhookDeliveryResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.send_webhook_event",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
     }
   ],
   "signals": [],
@@ -340,6 +435,14 @@
       "required": false,
       "write_mode": "both",
       "max_bytes": 64,
+      "scope": "app"
+    },
+    {
+      "name": "make_webhook_url",
+      "description": "Outgoing Make Custom Webhook trigger URL (from a Make scenario's Custom Webhook module) -- send_webhook_event POSTs to this. Independent of the make_api_token connection above.",
+      "required": false,
+      "write_mode": "both",
+      "max_bytes": 500,
       "scope": "app"
     }
   ],

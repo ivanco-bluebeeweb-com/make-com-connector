@@ -16,6 +16,8 @@ from schemas import (
     ListScenariosParams, MakeScenario, MakeScenarioList,
     RunScenarioParams, ScenarioRunResult,
     SetScenarioActiveParams, ScenarioStateResult,
+    SetOutgoingWebhookParams, OutgoingWebhookStatus,
+    SendWebhookEventParams, WebhookDeliveryResult,
 )
 
 _TEAM_SCOPE_MARKER = "team_scope_setting"
@@ -359,3 +361,92 @@ async def set_scenario_active(ctx, params: SetScenarioActiveParams) -> ActionRes
         summary=f"Scenario {params.scenario_id} {verb}.",
         refresh_panels=["make_connect"],
     )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 5: outgoing webhook Imperal -> Make.
+# ──────────────────────────────────────────────────────────────────────────
+
+_WEBHOOK_SECRET_NAME = "make_webhook_url"
+
+
+@chat.function(
+    "set_outgoing_webhook",
+    "Save (or clear, with an empty webhook_url) the Make Custom Webhook "
+    "trigger URL that send_webhook_event will POST to. Get this URL by "
+    "adding a 'Custom Webhook' module as the first step of a Make "
+    "scenario and copying its URL. This is independent of connect_make.",
+    action_type="write",
+    chain_callable=True,
+    data_model=OutgoingWebhookStatus,
+    event="make-com-connector.set_outgoing_webhook",
+    effects=["make.webhook.configured"],
+)
+async def set_outgoing_webhook(ctx, params: SetOutgoingWebhookParams) -> ActionResult:
+    """The URL itself is the credential (Make authenticates by knowing it,
+    not via a header), so it lives in ctx.secrets -- same tier as
+    make_api_token, not the non-sensitive ctx.store team_id marker."""
+    url = params.webhook_url.strip()
+    if not url:
+        await ctx.secrets.delete(_WEBHOOK_SECRET_NAME)
+        return ActionResult.success(
+            OutgoingWebhookStatus(configured=False, detail="No webhook configured"),
+            summary="Outgoing Make webhook cleared.",
+            refresh_panels=["make_connect"],
+        )
+    if not (url.startswith("https://") or url.startswith("http://")):
+        return ActionResult.error(
+            "That doesn't look like a URL. Paste the Custom Webhook trigger "
+            "URL from Make (add a 'Custom Webhook' module, copy its URL).",
+            code="MAKE_WEBHOOK_URL_INVALID",
+        )
+    await ctx.secrets.set(_WEBHOOK_SECRET_NAME, url)
+    return ActionResult.success(
+        OutgoingWebhookStatus(configured=True, detail="Webhook configured"),
+        summary="Outgoing Make webhook saved.",
+        refresh_panels=["make_connect"],
+    )
+
+
+@chat.function(
+    "get_outgoing_webhook_status",
+    "Check whether an outgoing Make webhook URL is configured (does not "
+    "reveal the URL itself).",
+    action_type="read",
+    chain_callable=True,
+    data_model=OutgoingWebhookStatus,
+)
+async def get_outgoing_webhook_status(ctx, params: NoParams) -> ActionResult:
+    url = await ctx.secrets.get(_WEBHOOK_SECRET_NAME)
+    configured = bool(url)
+    return ActionResult.success(
+        OutgoingWebhookStatus(
+            configured=configured,
+            detail="Webhook configured" if configured else "No webhook configured",
+        ),
+    )
+
+
+@chat.function(
+    "send_webhook_event",
+    "Send an event payload to the configured Make webhook right now -- "
+    "for other Imperal apps/automations to trigger a Make scenario. Run "
+    "set_outgoing_webhook first if you haven't configured one yet.",
+    action_type="write",
+    chain_callable=True,
+    data_model=WebhookDeliveryResult,
+    event="make-com-connector.send_webhook_event",
+    effects=["make.webhook.sent"],
+)
+async def send_webhook_event(ctx, params: SendWebhookEventParams) -> ActionResult:
+    url = await ctx.secrets.get(_WEBHOOK_SECRET_NAME)
+    if not url:
+        return ActionResult.error(
+            "No outgoing webhook is configured yet. Run set_outgoing_webhook first.",
+            code="MAKE_WEBHOOK_NOT_CONFIGURED",
+        )
+    delivered, status_code, detail = await mc.post_webhook(ctx, url, params.payload)
+    result = WebhookDeliveryResult(delivered=delivered, status_code=status_code, detail=detail)
+    if not delivered:
+        return ActionResult.error(detail, code="MAKE_WEBHOOK_DELIVERY_FAILED")
+    return ActionResult.success(result, summary=f"Webhook delivered (HTTP {status_code}).")

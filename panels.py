@@ -138,6 +138,38 @@ def _scenarios_card(scenarios: list[dict]) -> ui.UINode:
     )
 
 
+def _webhook_card(configured: bool) -> ui.UINode:
+    """Independent of connect_make -- this is a Make Custom Webhook trigger
+    URL the user pastes here so other Imperal apps/automations can fire a
+    Make scenario via send_webhook_event."""
+    if configured:
+        return ui.Card(
+            title="Outgoing webhook",
+            content=ui.Stack(direction="v", gap=2, children=[
+                ui.Badge(label="Configured", color="green"),
+                ui.Button(
+                    "Clear webhook", variant="secondary", size="sm",
+                    on_click=ui.Call("set_outgoing_webhook", webhook_url=""),
+                ),
+            ]),
+        )
+    return ui.Card(
+        title="Outgoing webhook",
+        subtitle="Send events from Imperal to a Make scenario",
+        content=ui.Form(
+            children=[
+                ui.Input(
+                    placeholder="Paste a Make Custom Webhook URL...",
+                    param_name="webhook_url",
+                    type="url",
+                ),
+            ],
+            submit_label="Save webhook",
+            action="set_outgoing_webhook",
+        ),
+    )
+
+
 @ext.panel("make_connect", slot="left", title="Make.com", icon="🧩",
            default_width=320, min_width=260, max_width=420)
 async def make_connect_panel(ctx, **kwargs) -> object:
@@ -146,6 +178,8 @@ async def make_connect_panel(ctx, **kwargs) -> object:
 
     header = ui.Header(text="Make.com", level=2,
                         subtitle="Run and monitor your Make scenarios from Imperal")
+
+    webhook_configured = bool(await ctx.secrets.get("make_webhook_url"))
 
     if not connected:
         return ui.Stack(direction="v", gap=4, children=[
@@ -156,6 +190,7 @@ async def make_connect_panel(ctx, **kwargs) -> object:
                 message="Connect your Make.com account to see and run your scenarios.",
                 type="info",
             ),
+            _webhook_card(webhook_configured),
         ])
 
     children: list[ui.UINode] = [header, _connected_card(f"Zone: {zone}")]
@@ -192,6 +227,7 @@ async def make_connect_panel(ctx, **kwargs) -> object:
         children.append(ui.Alert(title="Couldn't load scenarios", message=str(exc), type="danger"))
 
     children.append(_scenarios_card(scenarios))
+    children.append(_webhook_card(webhook_configured))
     return ui.Stack(direction="v", gap=4, children=children)
 
 

@@ -74,6 +74,15 @@ ext.secret(
     ),
     write_mode="both",
 )
+ext.secret(
+    name="make_webhook_url",
+    description=(
+        "Outgoing Make Custom Webhook trigger URL (from a Make scenario's "
+        "Custom Webhook module) -- send_webhook_event POSTs to this. "
+        "Independent of the make_api_token connection above."
+    ),
+    write_mode="both",
+)
 
 
 @ext.health_check

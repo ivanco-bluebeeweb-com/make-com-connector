@@ -116,3 +116,36 @@ class ScenarioStateResult(sdl.Entity):
     title: str = ""
     scenario_id: int = 0
     is_active: bool = False
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 5: outgoing webhook Imperal -> Make (a Make "Custom Webhook" trigger
+# URL the user pastes here; treated as a bearer-style secret, same tier as
+# make_api_token, since anyone holding that URL can fire the scenario).
+# ──────────────────────────────────────────────────────────────────────────
+
+
+class SetOutgoingWebhookParams(BaseModel):
+    webhook_url: str = Field(
+        "", description="The Custom Webhook trigger URL copied from a Make "
+                        "scenario (add a 'Custom Webhook' module, copy its "
+                        "URL). Leave empty to remove/disable it.")
+
+
+class OutgoingWebhookStatus(sdl.Entity):
+    configured: bool = False
+    detail: str = ""
+
+
+class SendWebhookEventParams(BaseModel):
+    payload: dict = Field(
+        default_factory=dict,
+        description="JSON-serializable payload to POST to the configured "
+                    "Make webhook URL -- shape is whatever the receiving "
+                    "Make scenario expects.")
+
+
+class WebhookDeliveryResult(sdl.Entity):
+    delivered: bool = False
+    status_code: int = 0
+    detail: str = ""
