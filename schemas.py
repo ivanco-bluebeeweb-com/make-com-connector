@@ -169,7 +169,14 @@ class BlueprintModule(sdl.Entity):
     """One module (step) in a scenario's blueprint -- position, app/module
     identity, and a short label describing what it is. `position` is
     1-based to match how modules are numbered in the Make editor UI, so
-    'module 7' means the 7th entry here."""
+    'module 7' means the 7th entry here.
+
+    `raw_config` is the module's own `mapper` object exactly as Make
+    stores it -- for AI modules (OpenAI/Anthropic/Gemini "message
+    assistant"/"create completion" etc.) this is where the actual prompt
+    text, assistant/model id, and generation params (temperature, etc.)
+    live. Exposed verbatim (not reshaped) so nothing is silently dropped
+    or misinterpreted -- Make's own field names vary per app/module."""
     id: str = ""
     title: str = ""
     position: int = 0
@@ -179,6 +186,7 @@ class BlueprintModule(sdl.Entity):
     label: str = ""
     is_router: bool = False
     branch_count: int = 0
+    raw_config: dict = Field(default_factory=dict)
 
 
 class BlueprintModuleList(sdl.EntityList[BlueprintModule]):

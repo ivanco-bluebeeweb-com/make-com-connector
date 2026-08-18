@@ -679,7 +679,7 @@
       "return_schema": {
         "$defs": {
           "BlueprintModule": {
-            "description": "One module (step) in a scenario's blueprint -- position, app/module\nidentity, and a short label describing what it is. `position` is\n1-based to match how modules are numbered in the Make editor UI, so\n'module 7' means the 7th entry here.",
+            "description": "One module (step) in a scenario's blueprint -- position, app/module\nidentity, and a short label describing what it is. `position` is\n1-based to match how modules are numbered in the Make editor UI, so\n'module 7' means the 7th entry here.\n\n`raw_config` is the module's own `mapper` object exactly as Make\nstores it -- for AI modules (OpenAI/Anthropic/Gemini \"message\nassistant\"/\"create completion\" etc.) this is where the actual prompt\ntext, assistant/model id, and generation params (temperature, etc.)\nlive. Exposed verbatim (not reshaped) so nothing is silently dropped\nor misinterpreted -- Make's own field names vary per app/module.",
             "properties": {
               "id": {
                 "default": "",
@@ -778,6 +778,11 @@
                 "default": 0,
                 "title": "Branch Count",
                 "type": "integer"
+              },
+              "raw_config": {
+                "additionalProperties": true,
+                "title": "Raw Config",
+                "type": "object"
               }
             },
             "title": "BlueprintModule",
@@ -838,7 +843,7 @@
         ],
         "title": "BlueprintModuleList",
         "type": "object",
-        "x-sdl": "entity_list"
+        "x-sdl": "entity-list"
       },
       "event": "",
       "background": false,
@@ -3182,7 +3187,7 @@
       "slot": "left",
       "title": "Make.com",
       "tree": {},
-      "icon": "🧩",
+      "icon": "\ud83e\udde9",
       "refresh": "manual",
       "center_overlay": false
     },

@@ -497,6 +497,11 @@ def _describe_module(raw: dict, position: int) -> BlueprintModule:
         label=label,
         is_router=module_full == "builtin:BasicRouter",
         branch_count=len(routes) if routes else 0,
+        # The module's own settings -- for AI modules (messageAssistantAdvanced,
+        # createCompletion, etc.) this IS where the prompt text, assistant/model
+        # id and generation params live. Make stores it under "mapper" in the
+        # blueprint; passed through untouched, not reshaped.
+        raw_config=raw.get("mapper") or {},
     )
 
 
