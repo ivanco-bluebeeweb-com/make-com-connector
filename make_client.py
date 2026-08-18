@@ -394,3 +394,149 @@ async def post_webhook(ctx, webhook_url: str, payload: dict) -> tuple[bool, int,
     if 200 <= status < 300:
         return True, status, "Delivered."
     return False, status, f"Make responded with HTTP {status}."
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 12: scenario CRUD (create/delete/clone/restore/trash) + scheduling +
+# buildtime variables + usage -- the remaining surface for "full control".
+# ──────────────────────────────────────────────────────────────────────────
+
+import hashlib
+import json as _json
+
+
+def blueprint_state_hash(blueprint: dict) -> str:
+    """Deterministic hash of a scenario's current blueprint -- used as the
+    expected_state_token for safe read-verify-write module edits, so a
+    concurrent edit (in the Make UI or elsewhere) is detected instead of
+    silently overwritten."""
+    canonical = _json.dumps(blueprint, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+async def update_scenario(
+    ctx, token: str, zone: str, scenario_id: int, *,
+    blueprint: dict | None = None, scheduling: dict | None = None,
+    name: str | None = None, folder_id: int | None = None,
+    confirmed: bool | None = None,
+) -> dict:
+    """PATCH /scenarios/{id}. Per Make's own docs, blueprint/scheduling
+    must be sent as JSON-encoded STRINGS (not objects) to save resources,
+    and any field omitted here is left unchanged server-side."""
+    payload: dict = {}
+    if blueprint is not None:
+        payload["blueprint"] = _json.dumps(blueprint)
+    if scheduling is not None:
+        payload["scheduling"] = _json.dumps(scheduling)
+    if name is not None:
+        payload["name"] = name
+    if folder_id is not None:
+        payload["folderId"] = folder_id
+    params = {}
+    if confirmed is not None:
+        params["confirmed"] = confirmed
+    resp = await ctx.http.patch(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}",
+        headers={**_headers(token), "Content-Type": "application/json"},
+        json=payload, params=params,
+    )
+    body = _check_status(resp, "update scenario")
+    return body.get("scenario") or {}
+
+
+async def create_scenario(
+    ctx, token: str, zone: str, *, blueprint: dict, team_id: int,
+    scheduling: dict | None = None, folder_id: int | None = None,
+    description: str = "", confirmed: bool | None = None,
+) -> dict:
+    payload: dict = {
+        "blueprint": _json.dumps(blueprint),
+        "teamId": team_id,
+        "scheduling": _json.dumps(scheduling or {"type": "indefinitely", "interval": 900}),
+    }
+    if folder_id is not None:
+        payload["folderId"] = folder_id
+    if description:
+        payload["description"] = description
+    params = {}
+    if confirmed is not None:
+        params["confirmed"] = confirmed
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/scenarios",
+        headers={**_headers(token), "Content-Type": "application/json"},
+        json=payload, params=params,
+    )
+    body = _check_status(resp, "create scenario")
+    return body.get("scenario") or {}
+
+
+async def delete_scenario(ctx, token: str, zone: str, scenario_id: int) -> int:
+    resp = await ctx.http.delete(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}", headers=_headers(token),
+    )
+    body = _check_status(resp, "delete scenario")
+    return body.get("scenario", scenario_id)
+
+
+async def restore_scenario(ctx, token: str, zone: str, scenario_id: int) -> dict:
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/restore", headers=_headers(token),
+    )
+    body = _check_status(resp, "restore scenario")
+    return body.get("scenario") or {}
+
+
+async def clone_scenario(
+    ctx, token: str, zone: str, scenario_id: int, *, name: str, team_id: int | None = None,
+    states: bool = False, confirmed: bool | None = None,
+) -> dict:
+    payload: dict = {"name": name, "states": states}
+    if team_id is not None:
+        payload["teamId"] = team_id
+    params = {}
+    if confirmed is not None:
+        params["confirmed"] = confirmed
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/clone",
+        headers={**_headers(token), "Content-Type": "application/json"},
+        json=payload, params=params,
+    )
+    return _check_status(resp, "clone scenario")
+
+
+async def get_scenario_usage(ctx, token: str, zone: str, scenario_id: int) -> list[dict]:
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/usage", headers=_headers(token),
+    )
+    body = _check_status(resp, "get scenario usage")
+    return body.get("data") or []
+
+
+async def list_buildtime_variables(ctx, token: str, zone: str, scenario_id: int) -> dict:
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/build-variables", headers=_headers(token),
+    )
+    body = _check_status(resp, "list buildtime variables")
+    return (body.get("variables") or {}).get("input") or {}
+
+
+async def set_buildtime_variables(
+    ctx, token: str, zone: str, scenario_id: int, variables: list[dict], *, create: bool,
+) -> None:
+    """POST to add new ones, PUT to update existing ones -- Make treats
+    these as two distinct operations, not an upsert."""
+    method = ctx.http.post if create else ctx.http.put
+    resp = await method(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/build-variables",
+        headers={**_headers(token), "Content-Type": "application/json"},
+        json={"input": variables},
+    )
+    _check_status(resp, "set buildtime variables")
+
+
+async def delete_buildtime_variable(ctx, token: str, zone: str, scenario_id: int, name: str) -> None:
+    resp = await ctx.http.delete(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/build-variables",
+        headers=_headers(token), params={"value": name},
+    )
+    _check_status(resp, "delete buildtime variable")

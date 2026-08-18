@@ -31,7 +31,15 @@ from schemas import (
     BulkSetScenarioActiveParams, BulkScenarioStateResult,
     BulkRunScenariosParams, BulkRunResult,
     BulkDeleteConnectionsParams, BulkDeleteHooksParams,
+    PreviewUpdateBlueprintModuleParams, BlueprintModuleFieldPreview,
+    ApplyUpdateBlueprintModuleParams, BlueprintModuleUpdateResult,
+    CreateScenarioParams, DeleteScenarioParams, RestoreScenarioParams,
+    CloneScenarioParams, UpdateSchedulingParams, SchedulingResult,
+    ListBuildtimeVariablesParams, BuildtimeVariable, BuildtimeVariableList,
+    SetBuildtimeVariableParams, DeleteBuildtimeVariableParams,
+    GetScenarioUsageParams, UsageDay, ScenarioUsageReport,
 )
+from schemas import MakeScenario as _MakeScenario  # reused for create/clone/restore results
 
 _TEAM_SCOPE_MARKER = "team_scope_setting"
 
@@ -1080,3 +1088,370 @@ async def bulk_delete_hooks(ctx, params: BulkDeleteHooksParams) -> ActionResult:
         BulkDeleteResult(deleted_count=len(deleted), ids=deleted, failed=failed),
         summary=f"{len(deleted)} hook(s) deleted, {len(failed)} failed.",
     )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 12: full control -- safe blueprint module field editing.
+#
+# Make's PATCH /scenarios/{id} only accepts the WHOLE blueprint document
+# (per Make's own docs, sent as a JSON string) -- there is no endpoint to
+# patch a single module field server-side. So "safely edit one field" is
+# built here as: fetch the live blueprint, locate the module by its own
+# id, read/replace exactly that one key inside its mapper, and PATCH the
+# whole document back -- gated by a state token (hash of the blueprint at
+# preview time) so a concurrent edit (e.g. in the Make UI) is refused
+# instead of silently overwritten, same discipline as every other
+# preview/apply pair on this platform.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def _find_module_in_flow(flow: list, module_id: int) -> dict | None:
+    for node in flow:
+        if int(node.get("id") or -1) == module_id:
+            return node
+        for route in (node.get("routes") or []):
+            found = _find_module_in_flow(route.get("flow") or [], module_id)
+            if found is not None:
+                return found
+    return None
+
+
+@chat.function(
+    "preview_update_blueprint_module",
+    "Preview changing ONE field inside a module's own settings (its "
+    "mapper -- e.g. an AI module's prompt text) without writing anything. "
+    "Shows the current value, the proposed value, and a state token that "
+    "apply_update_blueprint_module must be given unchanged. Use "
+    "get_scenario_blueprint's raw_config on the module first to see the "
+    "exact field names available.",
+    action_type="read",
+    chain_callable=True,
+    data_model=BlueprintModuleFieldPreview,
+)
+async def preview_update_blueprint_module(ctx, params: PreviewUpdateBlueprintModuleParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id, draft=params.draft)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    flow = blueprint.get("flow") or []
+    module = _find_module_in_flow(flow, params.module_id)
+    if module is None:
+        return ActionResult.error(
+            f"No module with id {params.module_id} found in this scenario's blueprint.",
+            code="MAKE_MODULE_NOT_FOUND",
+        )
+    mapper = module.get("mapper") or {}
+    current = mapper.get(params.field)
+    token_hash = mc.blueprint_state_hash(blueprint)
+    result = BlueprintModuleFieldPreview(
+        scenario_id=params.scenario_id, module_id=params.module_id, field=params.field,
+        current_value=str(current) if current is not None else "",
+        proposed_value=params.value,
+        field_exists=params.field in mapper,
+        expected_state_token=token_hash,
+    )
+    note = "" if result.field_exists else " (this field does not exist yet on this module -- it will be added)"
+    return ActionResult.success(
+        result,
+        summary=f"Module {params.module_id}, field '{params.field}': "
+                f"'{result.current_value}' -> '{params.value}'{note}. "
+                f"Pass expected_state_token to apply_update_blueprint_module to confirm.",
+    )
+
+
+@chat.function(
+    "apply_update_blueprint_module",
+    "Apply a previously previewed change to ONE field inside a module's "
+    "own settings (e.g. an AI module's prompt text). Re-reads the exact "
+    "scenario blueprint and refuses to write if it changed since preview.",
+    action_type="write",
+    chain_callable=True,
+    data_model=BlueprintModuleUpdateResult,
+    event="make-com-connector.apply_update_blueprint_module",
+    effects=["make.scenario.blueprint_module_updated"],
+)
+async def apply_update_blueprint_module(ctx, params: ApplyUpdateBlueprintModuleParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id, draft=params.draft)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    current_hash = mc.blueprint_state_hash(blueprint)
+    if current_hash != params.expected_state_token:
+        return ActionResult.error(
+            "This scenario's blueprint changed since you previewed this edit "
+            "(e.g. someone edited it in Make). Run preview_update_blueprint_module "
+            "again and re-apply with the new token to avoid overwriting that change.",
+            code="MAKE_STATE_CHANGED",
+        )
+    flow = blueprint.get("flow") or []
+    module = _find_module_in_flow(flow, params.module_id)
+    if module is None:
+        return ActionResult.error(
+            f"No module with id {params.module_id} found in this scenario's blueprint.",
+            code="MAKE_MODULE_NOT_FOUND",
+        )
+    mapper = module.setdefault("mapper", {})
+    mapper[params.field] = params.value
+    try:
+        await mc.update_scenario(
+            ctx, token, zone, params.scenario_id, blueprint=blueprint, confirmed=params.confirmed,
+        )
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        BlueprintModuleUpdateResult(
+            scenario_id=params.scenario_id, module_id=params.module_id,
+            field=params.field, new_value=params.value, applied=True,
+        ),
+        summary=f"Module {params.module_id}, field '{params.field}' updated.",
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 13: scenario lifecycle -- create/delete/restore/clone, scheduling.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+@chat.function(
+    "create_scenario",
+    "Create a brand-new, empty Make scenario in a team. You'll still need "
+    "to add modules via preview_update_blueprint_module/apply_update_blueprint_module "
+    "or the Make editor -- this just creates the container.",
+    action_type="write",
+    chain_callable=True,
+    data_model=MakeScenario,
+    event="make-com-connector.create_scenario",
+    effects=["make.scenario.created"],
+)
+async def create_scenario(ctx, params: CreateScenarioParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    blueprint = {"name": params.name, "flow": [], "metadata": {"instant": False}}
+    try:
+        raw = await mc.create_scenario(
+            ctx, token, zone, blueprint=blueprint, team_id=params.team_id,
+            folder_id=params.folder_id, description=params.description,
+            confirmed=params.confirmed,
+        )
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    result = MakeScenario(
+        id=str(raw.get("id", "")), title=raw.get("name", params.name),
+        scenario_id=int(raw.get("id") or 0), is_active=bool(raw.get("isActive")),
+        team_id=int(raw.get("teamId") or params.team_id),
+    )
+    return ActionResult.success(result, summary=f"Scenario '{params.name}' created.", refresh_panels=["make_connect"])
+
+
+@chat.function(
+    "delete_scenario",
+    "Delete a Make scenario. Make keeps it recoverable in Trash for 30 "
+    "days -- use restore_scenario to bring it back within that window.",
+    action_type="write",
+    chain_callable=True,
+    data_model=DeleteResult,
+    event="make-com-connector.delete_scenario",
+    effects=["make.scenario.deleted"],
+)
+async def delete_scenario(ctx, params: DeleteScenarioParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        did = await mc.delete_scenario(ctx, token, zone, params.scenario_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        DeleteResult(deleted_id=str(did)),
+        summary=f"Scenario {params.scenario_id} moved to Trash (recoverable for 30 days).",
+        refresh_panels=["make_connect"],
+    )
+
+
+@chat.function(
+    "restore_scenario",
+    "Restore a deleted Make scenario from Trash, within Make's 30-day recovery window.",
+    action_type="write",
+    chain_callable=True,
+    data_model=MakeScenario,
+    event="make-com-connector.restore_scenario",
+    effects=["make.scenario.restored"],
+)
+async def restore_scenario(ctx, params: RestoreScenarioParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        raw = await mc.restore_scenario(ctx, token, zone, params.scenario_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    result = MakeScenario(
+        id=str(raw.get("id", params.scenario_id)), title=raw.get("name", ""),
+        scenario_id=int(raw.get("id") or params.scenario_id),
+        is_active=bool(raw.get("isActive")), team_id=int(raw.get("teamId") or 0),
+    )
+    return ActionResult.success(result, summary=f"Scenario {params.scenario_id} restored.", refresh_panels=["make_connect"])
+
+
+@chat.function(
+    "clone_scenario",
+    "Clone an existing Make scenario -- same modules/connections, a new "
+    "id and name. Optionally into a different team.",
+    action_type="write",
+    chain_callable=True,
+    data_model=MakeScenario,
+    event="make-com-connector.clone_scenario",
+    effects=["make.scenario.cloned"],
+)
+async def clone_scenario(ctx, params: CloneScenarioParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        raw = await mc.clone_scenario(
+            ctx, token, zone, params.scenario_id, name=params.name,
+            team_id=params.team_id, states=params.keep_states, confirmed=params.confirmed,
+        )
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    new_id = raw.get("id") or (raw.get("scenario") or {}).get("id")
+    result = MakeScenario(
+        id=str(new_id or ""), title=params.name, scenario_id=int(new_id or 0),
+        is_active=False, team_id=int(params.team_id or 0),
+    )
+    return ActionResult.success(result, summary=f"Scenario cloned as '{params.name}'.", refresh_panels=["make_connect"])
+
+
+@chat.function(
+    "update_scheduling",
+    "Change how/when a scenario runs (interval, cron, on-demand, etc.) "
+    "without touching its modules.",
+    action_type="write",
+    chain_callable=True,
+    data_model=SchedulingResult,
+    event="make-com-connector.update_scheduling",
+    effects=["make.scenario.scheduling_changed"],
+)
+async def update_scheduling(ctx, params: UpdateSchedulingParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    scheduling: dict = {"type": params.scheduling_type}
+    if params.interval is not None:
+        scheduling["interval"] = params.interval
+    if params.cron is not None:
+        scheduling["cron"] = params.cron
+    try:
+        await mc.update_scenario(ctx, token, zone, params.scenario_id, scheduling=scheduling)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        SchedulingResult(scenario_id=params.scenario_id, scheduling_type=params.scheduling_type, interval=params.interval or 0),
+        summary=f"Scenario {params.scenario_id} scheduling updated to '{params.scheduling_type}'.",
+        refresh_panels=["make_connect"],
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 14: buildtime variables + usage.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+@chat.function(
+    "list_buildtime_variables",
+    "List a scenario's buildtime (installation-time) variables -- the "
+    "named inputs it was configured with, separate from its runtime data.",
+    action_type="read",
+    chain_callable=True,
+    data_model=BuildtimeVariableList,
+)
+async def list_buildtime_variables(ctx, params: ListBuildtimeVariablesParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        raw = await mc.list_buildtime_variables(ctx, token, zone, params.scenario_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    items = [BuildtimeVariable(id=k, title=k, name=k, value=str(v)) for k, v in raw.items()]
+    return ActionResult.success(BuildtimeVariableList(items=items, total=len(items), scenario_id=params.scenario_id))
+
+
+@chat.function(
+    "set_buildtime_variable",
+    "Add a new buildtime variable to a scenario, or update an existing one's value.",
+    action_type="write",
+    chain_callable=True,
+    data_model=BuildtimeVariable,
+    event="make-com-connector.set_buildtime_variable",
+    effects=["make.scenario.buildtime_variable_set"],
+)
+async def set_buildtime_variable(ctx, params: SetBuildtimeVariableParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        await mc.set_buildtime_variables(
+            ctx, token, zone, params.scenario_id,
+            [{"name": params.name, "value": params.value}], create=params.create_new,
+        )
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        BuildtimeVariable(id=params.name, title=params.name, name=params.name, value=params.value),
+        summary=f"Variable '{params.name}' {'created' if params.create_new else 'updated'}.",
+    )
+
+
+@chat.function(
+    "delete_buildtime_variable",
+    "Remove a buildtime variable from a scenario.",
+    action_type="write",
+    chain_callable=True,
+    data_model=DeleteResult,
+    event="make-com-connector.delete_buildtime_variable",
+    effects=["make.scenario.buildtime_variable_deleted"],
+)
+async def delete_buildtime_variable(ctx, params: DeleteBuildtimeVariableParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        await mc.delete_buildtime_variable(ctx, token, zone, params.scenario_id, params.name)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(DeleteResult(deleted_id=params.name), summary=f"Variable '{params.name}' deleted.")
+
+
+@chat.function(
+    "get_scenario_usage",
+    "Read a scenario's own operations/data-transfer usage history -- how "
+    "much of your Make plan quota it has consumed, per day.",
+    action_type="read",
+    chain_callable=True,
+    data_model=ScenarioUsageReport,
+)
+async def get_scenario_usage(ctx, params: GetScenarioUsageParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        raw = await mc.get_scenario_usage(ctx, token, zone, params.scenario_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    items = [
+        UsageDay(
+            id=d.get("date", ""), title=d.get("date", ""), date=d.get("date", ""),
+            operations=int(d.get("operations") or 0), data_transfer=int(d.get("dataTransfer") or 0),
+            centicredits=int(d.get("centicredits") or 0),
+        )
+        for d in raw
+    ]
+    return ActionResult.success(ScenarioUsageReport(items=items, total=len(items), scenario_id=params.scenario_id))

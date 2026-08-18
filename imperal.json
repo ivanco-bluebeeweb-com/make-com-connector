@@ -3144,6 +3144,1698 @@
       "long_running": false,
       "scopes": [],
       "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "preview_update_blueprint_module",
+      "description": "Preview changing ONE field inside a module's own settings (its mapper -- e.g. an AI module's prompt text) without writing anything. Shows the current value, the proposed value, and a state token that apply_update_blueprint_module must be given unchanged. Use get_scenario_blueprint's raw_config on the module first to see the exact field names available.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Make scenario id (see list_scenarios).",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "module_id": {
+            "description": "The module's own id from get_scenario_blueprint's module_id field (NOT its 1-based position).",
+            "title": "Module Id",
+            "type": "integer"
+          },
+          "field": {
+            "description": "Top-level key inside the module's own settings (raw_config from get_scenario_blueprint) to change -- e.g. 'text' for many AI-app prompt fields. Use the exact key name seen in raw_config.",
+            "title": "Field",
+            "type": "string"
+          },
+          "value": {
+            "description": "New value for that field.",
+            "title": "Value",
+            "type": "string"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "True to preview against the draft version. Omit for Make's own default.",
+            "title": "Draft"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "module_id",
+          "field",
+          "value"
+        ],
+        "title": "PreviewUpdateBlueprintModuleParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "module_id": {
+            "default": 0,
+            "title": "Module Id",
+            "type": "integer"
+          },
+          "field": {
+            "default": "",
+            "title": "Field",
+            "type": "string"
+          },
+          "current_value": {
+            "default": "",
+            "title": "Current Value",
+            "type": "string"
+          },
+          "proposed_value": {
+            "default": "",
+            "title": "Proposed Value",
+            "type": "string"
+          },
+          "field_exists": {
+            "default": false,
+            "title": "Field Exists",
+            "type": "boolean"
+          },
+          "expected_state_token": {
+            "default": "",
+            "title": "Expected State Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "BlueprintModuleFieldPreview",
+        "type": "object",
+        "x-sdl": "entity"
+      }
+    },
+    {
+      "name": "apply_update_blueprint_module",
+      "description": "Apply a previously previewed change to ONE field inside a module's own settings (e.g. an AI module's prompt text). Re-reads the exact scenario blueprint and refuses to write if it changed since preview.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.scenario.blueprint_module_updated"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Make scenario id.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "module_id": {
+            "description": "The module's own id (module_id from get_scenario_blueprint).",
+            "title": "Module Id",
+            "type": "integer"
+          },
+          "field": {
+            "description": "Same field name used in preview_update_blueprint_module.",
+            "title": "Field",
+            "type": "string"
+          },
+          "value": {
+            "description": "New value for that field.",
+            "title": "Value",
+            "type": "string"
+          },
+          "expected_state_token": {
+            "description": "Exact token from preview_update_blueprint_module. Execution stops if the scenario's blueprint changed since preview.",
+            "title": "Expected State Token",
+            "type": "string"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Must match the draft flag used in preview.",
+            "title": "Draft"
+          },
+          "confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Set true only if Make reports a first-time-app-in-org confirmation is needed.",
+            "title": "Confirmed"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "module_id",
+          "field",
+          "value",
+          "expected_state_token"
+        ],
+        "title": "ApplyUpdateBlueprintModuleParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "module_id": {
+            "default": 0,
+            "title": "Module Id",
+            "type": "integer"
+          },
+          "field": {
+            "default": "",
+            "title": "Field",
+            "type": "string"
+          },
+          "new_value": {
+            "default": "",
+            "title": "New Value",
+            "type": "string"
+          },
+          "applied": {
+            "default": false,
+            "title": "Applied",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "BlueprintModuleUpdateResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.apply_update_blueprint_module"
+    },
+    {
+      "name": "create_scenario",
+      "description": "Create a brand-new, empty Make scenario in a team. You'll still need to add modules via preview_update_blueprint_module/apply_update_blueprint_module or the Make editor -- this just creates the container.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.scenario.created"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "name": {
+            "description": "Name for the new scenario.",
+            "title": "Name",
+            "type": "string"
+          },
+          "team_id": {
+            "description": "Team to create the scenario in (see list_make_teams/select_team).",
+            "title": "Team Id",
+            "type": "integer"
+          },
+          "based_on_template_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Create from an existing Make template id instead of empty, if you have one.",
+            "title": "Based On Template Id"
+          },
+          "description": {
+            "default": "",
+            "description": "Optional scenario description.",
+            "title": "Description",
+            "type": "string"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional folder id to file the scenario under.",
+            "title": "Folder Id"
+          },
+          "confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Set true only if Make reports the scenario uses an app new to this org and needs install confirmation.",
+            "title": "Confirmed"
+          }
+        },
+        "required": [
+          "name",
+          "team_id"
+        ],
+        "title": "CreateScenarioParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "team_id": {
+            "default": 0,
+            "title": "Team Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "default": false,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "is_paused": {
+            "default": false,
+            "title": "Is Paused",
+            "type": "boolean"
+          },
+          "is_invalid": {
+            "default": false,
+            "title": "Is Invalid",
+            "type": "boolean"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Folder Id"
+          },
+          "last_edit": {
+            "default": "",
+            "title": "Last Edit",
+            "type": "string"
+          },
+          "scheduling_type": {
+            "default": "",
+            "title": "Scheduling Type",
+            "type": "string"
+          }
+        },
+        "title": "MakeScenario",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.create_scenario"
+    },
+    {
+      "name": "delete_scenario",
+      "description": "Delete a Make scenario. Make keeps it recoverable in Trash for 30 days -- use restore_scenario to bring it back within that window.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.scenario.deleted"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Scenario to delete. Make keeps it recoverable in Trash for 30 days (see restore_scenario).",
+            "title": "Scenario Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scenario_id"
+        ],
+        "title": "DeleteScenarioParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "deleted": {
+            "default": false,
+            "title": "Deleted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "DeleteResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.delete_scenario"
+    },
+    {
+      "name": "restore_scenario",
+      "description": "Restore a deleted Make scenario from Trash, within Make's 30-day recovery window.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.scenario.restored"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Scenario id to restore from Trash (within Make's 30-day window).",
+            "title": "Scenario Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scenario_id"
+        ],
+        "title": "RestoreScenarioParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "team_id": {
+            "default": 0,
+            "title": "Team Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "default": false,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "is_paused": {
+            "default": false,
+            "title": "Is Paused",
+            "type": "boolean"
+          },
+          "is_invalid": {
+            "default": false,
+            "title": "Is Invalid",
+            "type": "boolean"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Folder Id"
+          },
+          "last_edit": {
+            "default": "",
+            "title": "Last Edit",
+            "type": "string"
+          },
+          "scheduling_type": {
+            "default": "",
+            "title": "Scheduling Type",
+            "type": "string"
+          }
+        },
+        "title": "MakeScenario",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.restore_scenario"
+    },
+    {
+      "name": "clone_scenario",
+      "description": "Clone an existing Make scenario -- same modules/connections, a new id and name. Optionally into a different team.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.scenario.cloned"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Scenario to clone.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Name for the clone (max 120 characters).",
+            "title": "Name",
+            "type": "string"
+          },
+          "team_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Clone into a different team. Omit to clone into the same team.",
+            "title": "Team Id"
+          },
+          "keep_states": {
+            "default": false,
+            "description": "Also clone module run-state (e.g. last trigger position). False resets it in the clone.",
+            "title": "Keep States",
+            "type": "boolean"
+          },
+          "confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Set true only if Make reports a first-time-app-in-org confirmation is needed.",
+            "title": "Confirmed"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "name"
+        ],
+        "title": "CloneScenarioParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "team_id": {
+            "default": 0,
+            "title": "Team Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "default": false,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "is_paused": {
+            "default": false,
+            "title": "Is Paused",
+            "type": "boolean"
+          },
+          "is_invalid": {
+            "default": false,
+            "title": "Is Invalid",
+            "type": "boolean"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Folder Id"
+          },
+          "last_edit": {
+            "default": "",
+            "title": "Last Edit",
+            "type": "string"
+          },
+          "scheduling_type": {
+            "default": "",
+            "title": "Scheduling Type",
+            "type": "string"
+          }
+        },
+        "title": "MakeScenario",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.clone_scenario"
+    },
+    {
+      "name": "update_scheduling",
+      "description": "Change how/when a scenario runs (interval, cron, on-demand, etc.) without touching its modules.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.scenario.scheduling_changed"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Scenario to reschedule.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "scheduling_type": {
+            "description": "Make scheduling type: 'indefinitely' (interval-based), 'immediately' (webhook/instant trigger), 'on-demand', 'cron', or 'daily'/'weekly'/'monthly' per Make's own scheduling model.",
+            "title": "Scheduling Type",
+            "type": "string"
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Interval in seconds, for 'indefinitely' scheduling.",
+            "title": "Interval"
+          },
+          "cron": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Cron expression, for 'cron' scheduling.",
+            "title": "Cron"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "scheduling_type"
+        ],
+        "title": "UpdateSchedulingParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "scheduling_type": {
+            "default": "",
+            "title": "Scheduling Type",
+            "type": "string"
+          },
+          "interval": {
+            "default": 0,
+            "title": "Interval",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "SchedulingResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.update_scheduling"
+    },
+    {
+      "name": "list_buildtime_variables",
+      "description": "List a scenario's buildtime (installation-time) variables -- the named inputs it was configured with, separate from its runtime data.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Scenario whose buildtime (installation-time) variables to read.",
+            "title": "Scenario Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scenario_id"
+        ],
+        "title": "ListBuildtimeVariablesParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "BuildtimeVariable": {
+            "properties": {
+              "id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "title": "Id"
+              },
+              "title": {
+                "title": "Title",
+                "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Status"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Url"
+              },
+              "name": {
+                "default": "",
+                "title": "Name",
+                "type": "string"
+              },
+              "value": {
+                "default": "",
+                "title": "Value",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "title"
+            ],
+            "title": "BuildtimeVariable",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/BuildtimeVariable"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "BuildtimeVariableList",
+        "type": "object",
+        "x-sdl": "entity-list"
+      }
+    },
+    {
+      "name": "set_buildtime_variable",
+      "description": "Add a new buildtime variable to a scenario, or update an existing one's value.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.scenario.buildtime_variable_set"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Scenario to set the variable on.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Variable name (as shown by list_buildtime_variables).",
+            "title": "Name",
+            "type": "string"
+          },
+          "value": {
+            "description": "New value.",
+            "title": "Value",
+            "type": "string"
+          },
+          "create_new": {
+            "default": false,
+            "description": "True to add a brand-new variable name; false to update an existing one.",
+            "title": "Create New",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "name",
+          "value"
+        ],
+        "title": "SetBuildtimeVariableParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "name": {
+            "default": "",
+            "title": "Name",
+            "type": "string"
+          },
+          "value": {
+            "default": "",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "BuildtimeVariable",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.set_buildtime_variable"
+    },
+    {
+      "name": "delete_buildtime_variable",
+      "description": "Remove a buildtime variable from a scenario.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.scenario.buildtime_variable_deleted"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Scenario to remove the variable from.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Variable name to delete.",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "name"
+        ],
+        "title": "DeleteBuildtimeVariableParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "deleted": {
+            "default": false,
+            "title": "Deleted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "DeleteResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.delete_buildtime_variable"
+    },
+    {
+      "name": "get_scenario_usage",
+      "description": "Read a scenario's own operations/data-transfer usage history -- how much of your Make plan quota it has consumed, per day.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Scenario whose operations/data-transfer usage to read.",
+            "title": "Scenario Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scenario_id"
+        ],
+        "title": "GetScenarioUsageParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "UsageDay": {
+            "properties": {
+              "id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "title": "Id"
+              },
+              "title": {
+                "title": "Title",
+                "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Status"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Url"
+              },
+              "date": {
+                "default": "",
+                "title": "Date",
+                "type": "string"
+              },
+              "operations": {
+                "default": 0,
+                "title": "Operations",
+                "type": "integer"
+              },
+              "data_transfer": {
+                "default": 0,
+                "title": "Data Transfer",
+                "type": "integer"
+              },
+              "centicredits": {
+                "default": 0,
+                "title": "Centicredits",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "title"
+            ],
+            "title": "UsageDay",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/UsageDay"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ScenarioUsageReport",
+        "type": "object",
+        "x-sdl": "entity-list"
+      }
     }
   ],
   "signals": [],

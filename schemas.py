@@ -406,3 +406,124 @@ class BulkDeleteHooksParams(BaseModel):
         ..., min_length=1, max_length=100,
         description="Explicit hook ids; 1-100, never inferred.")
     confirm: bool = Field(False, description="Must be true. Scenarios using these hooks will stop working.")
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 12: full control -- safe blueprint module field editing (the real
+# ask behind "what does module N do" was always "and can I change it"),
+# plus scenario CRUD, scheduling, buildtime variables, usage.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+class PreviewUpdateBlueprintModuleParams(BaseModel):
+    scenario_id: int = Field(..., description="Make scenario id (see list_scenarios).")
+    module_id: int = Field(..., description="The module's own id from get_scenario_blueprint's module_id field (NOT its 1-based position).")
+    field: str = Field(..., description="Top-level key inside the module's own settings (raw_config from get_scenario_blueprint) to change -- e.g. 'text' for many AI-app prompt fields. Use the exact key name seen in raw_config.")
+    value: str = Field(..., description="New value for that field.")
+    draft: bool | None = Field(None, description="True to preview against the draft version. Omit for Make's own default.")
+
+
+class BlueprintModuleFieldPreview(sdl.Entity):
+    scenario_id: int = 0
+    module_id: int = 0
+    field: str = ""
+    current_value: str = ""
+    proposed_value: str = ""
+    field_exists: bool = False
+    expected_state_token: str = ""
+
+
+class ApplyUpdateBlueprintModuleParams(BaseModel):
+    scenario_id: int = Field(..., description="Make scenario id.")
+    module_id: int = Field(..., description="The module's own id (module_id from get_scenario_blueprint).")
+    field: str = Field(..., description="Same field name used in preview_update_blueprint_module.")
+    value: str = Field(..., description="New value for that field.")
+    expected_state_token: str = Field(..., description="Exact token from preview_update_blueprint_module. Execution stops if the scenario's blueprint changed since preview.")
+    draft: bool | None = Field(None, description="Must match the draft flag used in preview.")
+    confirmed: bool | None = Field(None, description="Set true only if Make reports a first-time-app-in-org confirmation is needed.")
+
+
+class BlueprintModuleUpdateResult(sdl.Entity):
+    scenario_id: int = 0
+    module_id: int = 0
+    field: str = ""
+    new_value: str = ""
+    applied: bool = False
+
+
+class CreateScenarioParams(BaseModel):
+    name: str = Field(..., description="Name for the new scenario.")
+    team_id: int = Field(..., description="Team to create the scenario in (see list_make_teams/select_team).")
+    based_on_template_id: int | None = Field(None, description="Create from an existing Make template id instead of empty, if you have one.")
+    description: str = Field("", description="Optional scenario description.")
+    folder_id: int | None = Field(None, description="Optional folder id to file the scenario under.")
+    confirmed: bool | None = Field(None, description="Set true only if Make reports the scenario uses an app new to this org and needs install confirmation.")
+
+
+class DeleteScenarioParams(BaseModel):
+    scenario_id: int = Field(..., description="Scenario to delete. Make keeps it recoverable in Trash for 30 days (see restore_scenario).")
+
+
+class RestoreScenarioParams(BaseModel):
+    scenario_id: int = Field(..., description="Scenario id to restore from Trash (within Make's 30-day window).")
+
+
+class CloneScenarioParams(BaseModel):
+    scenario_id: int = Field(..., description="Scenario to clone.")
+    name: str = Field(..., description="Name for the clone (max 120 characters).")
+    team_id: int | None = Field(None, description="Clone into a different team. Omit to clone into the same team.")
+    keep_states: bool = Field(False, description="Also clone module run-state (e.g. last trigger position). False resets it in the clone.")
+    confirmed: bool | None = Field(None, description="Set true only if Make reports a first-time-app-in-org confirmation is needed.")
+
+
+class UpdateSchedulingParams(BaseModel):
+    scenario_id: int = Field(..., description="Scenario to reschedule.")
+    scheduling_type: str = Field(..., description="Make scheduling type: 'indefinitely' (interval-based), 'immediately' (webhook/instant trigger), 'on-demand', 'cron', or 'daily'/'weekly'/'monthly' per Make's own scheduling model.")
+    interval: int | None = Field(None, description="Interval in seconds, for 'indefinitely' scheduling.")
+    cron: str | None = Field(None, description="Cron expression, for 'cron' scheduling.")
+
+
+class SchedulingResult(sdl.Entity):
+    scenario_id: int = 0
+    scheduling_type: str = ""
+    interval: int = 0
+
+
+class ListBuildtimeVariablesParams(BaseModel):
+    scenario_id: int = Field(..., description="Scenario whose buildtime (installation-time) variables to read.")
+
+
+class BuildtimeVariable(sdl.Entity):
+    name: str = ""
+    value: str = ""
+
+
+class BuildtimeVariableList(sdl.EntityList[BuildtimeVariable]):
+    scenario_id: int = 0
+
+
+class SetBuildtimeVariableParams(BaseModel):
+    scenario_id: int = Field(..., description="Scenario to set the variable on.")
+    name: str = Field(..., description="Variable name (as shown by list_buildtime_variables).")
+    value: str = Field(..., description="New value.")
+    create_new: bool = Field(False, description="True to add a brand-new variable name; false to update an existing one.")
+
+
+class DeleteBuildtimeVariableParams(BaseModel):
+    scenario_id: int = Field(..., description="Scenario to remove the variable from.")
+    name: str = Field(..., description="Variable name to delete.")
+
+
+class GetScenarioUsageParams(BaseModel):
+    scenario_id: int = Field(..., description="Scenario whose operations/data-transfer usage to read.")
+
+
+class UsageDay(sdl.Entity):
+    date: str = ""
+    operations: int = 0
+    data_transfer: int = 0
+    centicredits: int = 0
+
+
+class ScenarioUsageReport(sdl.EntityList[UsageDay]):
+    scenario_id: int = 0
