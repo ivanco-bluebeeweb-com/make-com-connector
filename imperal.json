@@ -641,6 +641,2504 @@
       "long_running": false,
       "scopes": [],
       "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "get_scenario_blueprint",
+      "description": "Read a scenario's actual module list (blueprint) -- what each numbered step in the flow is and does, in the same order the Make editor numbers them. This is how to answer 'what is module N' or 'what does the Nth step do'.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Make scenario id (see list_scenarios).",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "True for the draft (unsaved editor) version, False for the live/published version. Omit to get Make's own default for this scenario.",
+            "title": "Draft"
+          }
+        },
+        "required": [
+          "scenario_id"
+        ],
+        "title": "GetScenarioBlueprintParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "BlueprintModule": {
+            "description": "One module (step) in a scenario's blueprint -- position, app/module\nidentity, and a short label describing what it is. `position` is\n1-based to match how modules are numbered in the Make editor UI, so\n'module 7' means the 7th entry here.",
+            "properties": {
+              "id": {
+                "default": "",
+                "title": "Id",
+                "type": "string"
+              },
+              "title": {
+                "default": "",
+                "title": "Title",
+                "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Status"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Url"
+              },
+              "position": {
+                "default": 0,
+                "title": "Position",
+                "type": "integer"
+              },
+              "module_id": {
+                "default": 0,
+                "title": "Module Id",
+                "type": "integer"
+              },
+              "app": {
+                "default": "",
+                "title": "App",
+                "type": "string"
+              },
+              "module": {
+                "default": "",
+                "title": "Module",
+                "type": "string"
+              },
+              "label": {
+                "default": "",
+                "title": "Label",
+                "type": "string"
+              },
+              "is_router": {
+                "default": false,
+                "title": "Is Router",
+                "type": "boolean"
+              },
+              "branch_count": {
+                "default": 0,
+                "title": "Branch Count",
+                "type": "integer"
+              }
+            },
+            "title": "BlueprintModule",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/BlueprintModule"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "scenario_id": {
+            "default": 0,
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "scenario_name": {
+            "default": "",
+            "title": "Scenario Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "BlueprintModuleList",
+        "type": "object",
+        "x-sdl": "entity_list"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "list_connections",
+      "description": "List the app connections in your Make team -- what a scenario's modules actually authenticate as (which account/app each connection is for, and whether it's about to expire).",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {},
+        "title": "ListConnectionsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "MakeConnection": {
+            "properties": {
+              "id": {
+                "default": "",
+                "title": "Id",
+                "type": "string"
+              },
+              "title": {
+                "default": "",
+                "title": "Title",
+                "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Status"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Url"
+              },
+              "connection_id": {
+                "default": 0,
+                "title": "Connection Id",
+                "type": "integer"
+              },
+              "account_type": {
+                "default": "",
+                "title": "Account Type",
+                "type": "string"
+              },
+              "account_label": {
+                "default": "",
+                "title": "Account Label",
+                "type": "string"
+              },
+              "expires": {
+                "default": "",
+                "title": "Expires",
+                "type": "string"
+              },
+              "editable": {
+                "default": true,
+                "title": "Editable",
+                "type": "boolean"
+              }
+            },
+            "title": "MakeConnection",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/MakeConnection"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "MakeConnectionList",
+        "type": "object",
+        "x-sdl": "entity_list"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "delete_connection",
+      "description": "Permanently delete a Make connection. Any scenario using it will stop working once it's gone.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "description": "Connection id (see list_connections).",
+            "title": "Connection Id",
+            "type": "integer"
+          },
+          "confirm": {
+            "default": false,
+            "description": "Must be true. Any scenario using this connection will stop working once it's deleted.",
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "connection_id"
+        ],
+        "title": "DeleteConnectionParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "deleted": {
+            "default": false,
+            "title": "Deleted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "DeleteResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "rename_connection",
+      "description": "Rename a Make connection's display name.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "description": "Connection id (see list_connections).",
+            "title": "Connection Id",
+            "type": "integer"
+          },
+          "name": {
+            "description": "New display name for the connection.",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connection_id",
+          "name"
+        ],
+        "title": "RenameConnectionParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "connection_id": {
+            "default": 0,
+            "title": "Connection Id",
+            "type": "integer"
+          },
+          "account_type": {
+            "default": "",
+            "title": "Account Type",
+            "type": "string"
+          },
+          "account_label": {
+            "default": "",
+            "title": "Account Label",
+            "type": "string"
+          },
+          "expires": {
+            "default": "",
+            "title": "Expires",
+            "type": "string"
+          },
+          "editable": {
+            "default": true,
+            "title": "Editable",
+            "type": "boolean"
+          }
+        },
+        "title": "MakeConnection",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "verify_connection",
+      "description": "Test whether a Make connection's credentials still work.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "description": "Connection id (see list_connections).",
+            "title": "Connection Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "connection_id"
+        ],
+        "title": "VerifyConnectionParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "connection_id": {
+            "default": 0,
+            "title": "Connection Id",
+            "type": "integer"
+          },
+          "verified": {
+            "default": false,
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "ConnectionVerifyResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "list_data_stores",
+      "description": "List the data stores (Make's own key/value storage) in your team, with record counts and size.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {},
+        "title": "ListDataStoresParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "MakeDataStore": {
+            "properties": {
+              "id": {
+                "default": "",
+                "title": "Id",
+                "type": "string"
+              },
+              "title": {
+                "default": "",
+                "title": "Title",
+                "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Status"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Url"
+              },
+              "data_store_id": {
+                "default": 0,
+                "title": "Data Store Id",
+                "type": "integer"
+              },
+              "records": {
+                "default": 0,
+                "title": "Records",
+                "type": "integer"
+              },
+              "size": {
+                "default": 0,
+                "title": "Size",
+                "type": "integer"
+              },
+              "max_size": {
+                "default": 0,
+                "title": "Max Size",
+                "type": "integer"
+              }
+            },
+            "title": "MakeDataStore",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/MakeDataStore"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "MakeDataStoreList",
+        "type": "object",
+        "x-sdl": "entity_list"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "create_data_store",
+      "description": "Create a new Make data store (key/value storage a scenario can read/write).",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "name": {
+            "description": "Name for the new data store.",
+            "title": "Name",
+            "type": "string"
+          },
+          "max_size_mb": {
+            "default": 1,
+            "description": "Max size in megabytes.",
+            "minimum": 1,
+            "title": "Max Size Mb",
+            "type": "integer"
+          },
+          "data_structure_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional data structure id defining the record schema. Omit for a schema-less store.",
+            "title": "Data Structure Id"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CreateDataStoreParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "data_store_id": {
+            "default": 0,
+            "title": "Data Store Id",
+            "type": "integer"
+          },
+          "records": {
+            "default": 0,
+            "title": "Records",
+            "type": "integer"
+          },
+          "size": {
+            "default": 0,
+            "title": "Size",
+            "type": "integer"
+          },
+          "max_size": {
+            "default": 0,
+            "title": "Max Size",
+            "type": "integer"
+          }
+        },
+        "title": "MakeDataStore",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "delete_data_store",
+      "description": "Permanently delete a Make data store and all of its records.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "data_store_id": {
+            "description": "Data store id (see list_data_stores).",
+            "title": "Data Store Id",
+            "type": "integer"
+          },
+          "confirm": {
+            "default": false,
+            "description": "Must be true. This permanently deletes all its records.",
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "data_store_id"
+        ],
+        "title": "DeleteDataStoreParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "deleted": {
+            "default": false,
+            "title": "Deleted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "DeleteResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "list_hooks",
+      "description": "List the incoming webhooks/mailhooks (Make 'hooks') in your team -- the triggers scenarios listen on, with their URL and whether they're enabled.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {},
+        "title": "ListHooksParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "MakeHook": {
+            "properties": {
+              "id": {
+                "default": "",
+                "title": "Id",
+                "type": "string"
+              },
+              "title": {
+                "default": "",
+                "title": "Title",
+                "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Status"
+              },
+              "url": {
+                "default": "",
+                "title": "Url",
+                "type": "string"
+              },
+              "hook_id": {
+                "default": 0,
+                "title": "Hook Id",
+                "type": "integer"
+              },
+              "type_name": {
+                "default": "",
+                "title": "Type Name",
+                "type": "string"
+              },
+              "enabled": {
+                "default": true,
+                "title": "Enabled",
+                "type": "boolean"
+              },
+              "scenario_id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Scenario Id"
+              },
+              "queue_count": {
+                "default": 0,
+                "title": "Queue Count",
+                "type": "integer"
+              }
+            },
+            "title": "MakeHook",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/MakeHook"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "MakeHookList",
+        "type": "object",
+        "x-sdl": "entity_list"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "set_hook_enabled",
+      "description": "Enable or disable a Make hook (incoming webhook/mailhook) without deleting it.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "hook_id": {
+            "description": "Hook id (see list_hooks).",
+            "title": "Hook Id",
+            "type": "integer"
+          },
+          "enabled": {
+            "description": "True to enable (accept data), False to disable.",
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "hook_id",
+          "enabled"
+        ],
+        "title": "SetHookEnabledParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "default": "",
+            "title": "Url",
+            "type": "string"
+          },
+          "hook_id": {
+            "default": 0,
+            "title": "Hook Id",
+            "type": "integer"
+          },
+          "type_name": {
+            "default": "",
+            "title": "Type Name",
+            "type": "string"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Scenario Id"
+          },
+          "queue_count": {
+            "default": 0,
+            "title": "Queue Count",
+            "type": "integer"
+          }
+        },
+        "title": "MakeHook",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "delete_hook",
+      "description": "Permanently remove a Make hook. Any scenario using it will stop working once it's gone.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "hook_id": {
+            "description": "Hook id (see list_hooks).",
+            "title": "Hook Id",
+            "type": "integer"
+          },
+          "confirm": {
+            "default": false,
+            "description": "Must be true. Any scenario using this hook will stop working once it's deleted.",
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "hook_id"
+        ],
+        "title": "DeleteHookParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "deleted": {
+            "default": false,
+            "title": "Deleted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "DeleteResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "list_incomplete_executions",
+      "description": "List a scenario's incomplete executions (failed runs held for manual resolution instead of being discarded) -- what failed, when, and whether it's already resolved.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Scenario id whose incomplete executions to list.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter by derived status: resolved, scheduled, inprogress, or unresolved.",
+            "title": "Status"
+          }
+        },
+        "required": [
+          "scenario_id"
+        ],
+        "title": "ListIncompleteExecutionsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "IncompleteExecution": {
+            "properties": {
+              "id": {
+                "default": "",
+                "title": "Id",
+                "type": "string"
+              },
+              "title": {
+                "default": "",
+                "title": "Title",
+                "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Status"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Url"
+              },
+              "reason": {
+                "default": "",
+                "title": "Reason",
+                "type": "string"
+              },
+              "created": {
+                "default": "",
+                "title": "Created",
+                "type": "string"
+              },
+              "size": {
+                "default": 0,
+                "title": "Size",
+                "type": "integer"
+              },
+              "resolved": {
+                "default": false,
+                "title": "Resolved",
+                "type": "boolean"
+              },
+              "retry": {
+                "default": false,
+                "title": "Retry",
+                "type": "boolean"
+              },
+              "attempts": {
+                "default": 0,
+                "title": "Attempts",
+                "type": "integer"
+              }
+            },
+            "title": "IncompleteExecution",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/IncompleteExecution"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "IncompleteExecutionList",
+        "type": "object",
+        "x-sdl": "entity_list"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "retry_incomplete_execution",
+      "description": "Retry one incomplete (failed) scenario execution after fixing the underlying issue.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "dlq_id": {
+            "description": "Incomplete execution id (see list_incomplete_executions).",
+            "title": "Dlq Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dlq_id"
+        ],
+        "title": "RetryIncompleteExecutionParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "reason": {
+            "default": "",
+            "title": "Reason",
+            "type": "string"
+          },
+          "created": {
+            "default": "",
+            "title": "Created",
+            "type": "string"
+          },
+          "size": {
+            "default": 0,
+            "title": "Size",
+            "type": "integer"
+          },
+          "resolved": {
+            "default": false,
+            "title": "Resolved",
+            "type": "boolean"
+          },
+          "retry": {
+            "default": false,
+            "title": "Retry",
+            "type": "boolean"
+          },
+          "attempts": {
+            "default": 0,
+            "title": "Attempts",
+            "type": "integer"
+          }
+        },
+        "title": "IncompleteExecution",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "delete_incomplete_executions",
+      "description": "Permanently delete one scenario's incomplete executions -- explicit ids, or all=true with confirm=true to clear every one.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_id": {
+            "description": "Scenario id whose incomplete executions to delete.",
+            "title": "Scenario Id",
+            "type": "integer"
+          },
+          "dlq_ids": {
+            "description": "Explicit incomplete execution ids to delete. Omit and set all=true to delete every one.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Dlq Ids",
+            "type": "array"
+          },
+          "all": {
+            "default": false,
+            "description": "Delete every incomplete execution of this scenario.",
+            "title": "All",
+            "type": "boolean"
+          },
+          "confirm": {
+            "default": false,
+            "description": "Must be true when all=true.",
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "scenario_id"
+        ],
+        "title": "DeleteIncompleteExecutionsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "deleted_count": {
+            "default": 0,
+            "title": "Deleted Count",
+            "type": "integer"
+          },
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "BulkDeleteResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "bulk_set_scenario_active",
+      "description": "Activate or deactivate SEVERAL Make scenarios in one call by explicit scenario ids.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.scenario.bulk_state_changed"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_ids": {
+            "description": "Explicit Make scenario ids; 1-100, never inferred.",
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Scenario Ids",
+            "type": "array"
+          },
+          "active": {
+            "description": "True to activate every listed scenario, False to deactivate.",
+            "title": "Active",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "scenario_ids",
+          "active"
+        ],
+        "title": "BulkSetScenarioActiveParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "succeeded": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Succeeded",
+            "type": "array"
+          },
+          "failed": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Failed",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "BulkScenarioStateResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.bulk_set_scenario_active",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "bulk_run_scenarios",
+      "description": "Run SEVERAL Make scenarios right now, by explicit scenario ids. Executes real actions in each scenario immediately -- no dry-run, always requires confirm=true.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "make.scenario.bulk_run"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "scenario_ids": {
+            "description": "Explicit Make scenario ids; 1-100, never inferred.",
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Scenario Ids",
+            "type": "array"
+          },
+          "confirm": {
+            "default": false,
+            "description": "Must be true. Runs every listed scenario's real actions right now, with no dry-run or undo.",
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "scenario_ids"
+        ],
+        "title": "BulkRunScenariosParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "succeeded": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Succeeded",
+            "type": "object"
+          },
+          "failed": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Failed",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "BulkRunResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "make-com-connector.bulk_run_scenarios",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "bulk_delete_connections",
+      "description": "Permanently delete SEVERAL Make connections at once, by explicit connection ids. Any scenario using one will stop working once it's gone.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_ids": {
+            "description": "Explicit connection ids; 1-100, never inferred.",
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Connection Ids",
+            "type": "array"
+          },
+          "confirm": {
+            "default": false,
+            "description": "Must be true. Scenarios using these connections will stop working.",
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "connection_ids"
+        ],
+        "title": "BulkDeleteConnectionsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "deleted_count": {
+            "default": 0,
+            "title": "Deleted Count",
+            "type": "integer"
+          },
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "BulkDeleteResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
+    },
+    {
+      "name": "bulk_delete_hooks",
+      "description": "Permanently remove SEVERAL Make hooks at once, by explicit hook ids. Any scenario using one will stop working once it's gone.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "hook_ids": {
+            "description": "Explicit hook ids; 1-100, never inferred.",
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Hook Ids",
+            "type": "array"
+          },
+          "confirm": {
+            "default": false,
+            "description": "Must be true. Scenarios using these hooks will stop working.",
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "hook_ids"
+        ],
+        "title": "BulkDeleteHooksParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "deleted_count": {
+            "default": 0,
+            "title": "Deleted Count",
+            "type": "integer"
+          },
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "BulkDeleteResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make_com_connector"
     }
   ],
   "signals": [],

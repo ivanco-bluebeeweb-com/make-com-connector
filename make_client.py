@@ -219,6 +219,159 @@ async def list_organizations(ctx, token: str, zone: str) -> list[dict]:
     return body.get("organizations") or []
 
 
+async def get_scenario_blueprint(
+    ctx, token: str, zone: str, scenario_id: int, *, draft: bool | None = None,
+) -> dict:
+    """GET /scenarios/{id}/blueprint -- the actual module tree (flow[]),
+    the one thing list_scenarios/get_scenario never return. This is what
+    answers "what does module N do": each flow[] entry is one module, in
+    the same 1-based order the Make editor numbers them."""
+    params: dict = {}
+    if draft is not None:
+        params["draft"] = draft
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/scenarios/{scenario_id}/blueprint",
+        headers=_headers(token), params=params,
+    )
+    body = _check_status(resp, "get scenario blueprint")
+    # This endpoint wraps its payload one level deeper: {code, response:{blueprint:{...}}}.
+    return ((body.get("response") or {}).get("blueprint")) or body.get("blueprint") or {}
+
+
+async def list_connections(ctx, token: str, zone: str, team_id: int) -> list[dict]:
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/connections", headers=_headers(token),
+        params={"teamId": team_id},
+    )
+    body = _check_status(resp, "list connections")
+    return body.get("connections") or []
+
+
+async def delete_connection(ctx, token: str, zone: str, connection_id: int, *, confirmed: bool) -> int:
+    resp = await ctx.http.delete(
+        f"https://{zone}/api/v2/connections/{connection_id}",
+        headers=_headers(token), params={"confirmed": confirmed},
+    )
+    body = _check_status(resp, "delete connection")
+    return body.get("connection", connection_id)
+
+
+async def rename_connection(ctx, token: str, zone: str, connection_id: int, name: str) -> dict:
+    resp = await ctx.http.patch(
+        f"https://{zone}/api/v2/connections/{connection_id}",
+        headers={**_headers(token), "Content-Type": "application/json"},
+        json={"name": name},
+    )
+    body = _check_status(resp, "rename connection")
+    return body.get("connection") or {}
+
+
+async def verify_connection(ctx, token: str, zone: str, connection_id: int) -> bool:
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/connections/{connection_id}/test", headers=_headers(token),
+    )
+    body = _check_status(resp, "verify connection")
+    return bool(body.get("verified"))
+
+
+async def list_data_stores(ctx, token: str, zone: str, team_id: int) -> list[dict]:
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/data-stores", headers=_headers(token),
+        params={"teamId": team_id},
+    )
+    body = _check_status(resp, "list data stores")
+    return body.get("dataStores") or []
+
+
+async def create_data_store(
+    ctx, token: str, zone: str, team_id: int, name: str, *,
+    max_size_mb: int = 1, data_structure_id: int | None = None,
+) -> dict:
+    payload: dict = {"name": name, "teamId": team_id, "maxSizeMB": max_size_mb}
+    if data_structure_id is not None:
+        payload["dataStructureId"] = data_structure_id
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/data-stores",
+        headers={**_headers(token), "Content-Type": "application/json"}, json=payload,
+    )
+    body = _check_status(resp, "create data store")
+    return body.get("dataStore") or {}
+
+
+async def delete_data_store(ctx, token: str, zone: str, data_store_id: int) -> int:
+    resp = await ctx.http.delete(
+        f"https://{zone}/api/v2/data-stores/{data_store_id}", headers=_headers(token),
+    )
+    body = _check_status(resp, "delete data store")
+    return body.get("dataStore", data_store_id)
+
+
+async def list_hooks(ctx, token: str, zone: str, team_id: int) -> list[dict]:
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/hooks", headers=_headers(token),
+        params={"teamId": team_id},
+    )
+    body = _check_status(resp, "list hooks")
+    return body.get("hooks") or []
+
+
+async def set_hook_enabled(ctx, token: str, zone: str, hook_id: int, enabled: bool) -> bool:
+    verb = "enable" if enabled else "disable"
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/hooks/{hook_id}/{verb}", headers=_headers(token),
+    )
+    body = _check_status(resp, f"{verb} hook")
+    return bool(body.get("success"))
+
+
+async def delete_hook(ctx, token: str, zone: str, hook_id: int, *, confirmed: bool) -> int:
+    resp = await ctx.http.delete(
+        f"https://{zone}/api/v2/hooks/{hook_id}",
+        headers=_headers(token), params={"confirmed": confirmed},
+    )
+    body = _check_status(resp, "delete hook")
+    return body.get("hook", hook_id)
+
+
+async def list_incomplete_executions(
+    ctx, token: str, zone: str, scenario_id: int, *, status: str | None = None,
+) -> list[dict]:
+    params: dict = {"scenarioId": scenario_id}
+    if status:
+        params["status"] = status
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/dlqs", headers=_headers(token), params=params,
+    )
+    body = _check_status(resp, "list incomplete executions")
+    return body.get("dlqs") or []
+
+
+async def retry_incomplete_execution(ctx, token: str, zone: str, dlq_id: str) -> dict:
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/dlqs/{dlq_id}/retry", headers=_headers(token),
+    )
+    return _check_status(resp, "retry incomplete execution")
+
+
+async def delete_incomplete_executions(
+    ctx, token: str, zone: str, scenario_id: int, *,
+    ids: list[str] | None = None, all_: bool = False, confirmed: bool = False,
+) -> list[str]:
+    payload: dict = {}
+    if all_:
+        payload["all"] = True
+    if ids:
+        payload["ids"] = ids
+    resp = await ctx.http.delete(
+        f"https://{zone}/api/v2/dlqs",
+        headers={**_headers(token), "Content-Type": "application/json"},
+        params={"scenarioId": scenario_id, "confirmed": confirmed},
+        json=payload,
+    )
+    body = _check_status(resp, "delete incomplete executions")
+    return body.get("dlqs") or []
+
+
 async def post_webhook(ctx, webhook_url: str, payload: dict) -> tuple[bool, int, str]:
     """POST an arbitrary JSON payload to a Make Custom Webhook trigger URL.
 

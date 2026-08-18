@@ -18,6 +18,19 @@ from schemas import (
     SetScenarioActiveParams, ScenarioStateResult,
     SetOutgoingWebhookParams, OutgoingWebhookStatus,
     SendWebhookEventParams, WebhookDeliveryResult,
+    GetScenarioBlueprintParams, BlueprintModule, BlueprintModuleList,
+    ListConnectionsParams, MakeConnection, MakeConnectionList,
+    DeleteConnectionParams, RenameConnectionParams,
+    VerifyConnectionParams, ConnectionVerifyResult, DeleteResult,
+    ListDataStoresParams, MakeDataStore, MakeDataStoreList,
+    CreateDataStoreParams, DeleteDataStoreParams,
+    ListHooksParams, MakeHook, MakeHookList,
+    SetHookEnabledParams, DeleteHookParams,
+    ListIncompleteExecutionsParams, IncompleteExecution, IncompleteExecutionList,
+    RetryIncompleteExecutionParams, DeleteIncompleteExecutionsParams, BulkDeleteResult,
+    BulkSetScenarioActiveParams, BulkScenarioStateResult,
+    BulkRunScenariosParams, BulkRunResult,
+    BulkDeleteConnectionsParams, BulkDeleteHooksParams,
 )
 
 _TEAM_SCOPE_MARKER = "team_scope_setting"
@@ -452,3 +465,613 @@ async def send_webhook_event(ctx, params: SendWebhookEventParams) -> ActionResul
     if not delivered:
         return ActionResult.error(detail, code="MAKE_WEBHOOK_DELIVERY_FAILED")
     return ActionResult.success(result, summary=f"Webhook delivered (HTTP {status_code}).")
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 6: scenario blueprint -- what module N actually is/does.
+# ──────────────────────────────────────────────────────────────────────────
+
+_APP_LABELS = {
+    "builtin:BasicRouter": "Router",
+    "builtin:BasicFeeder": "Iterator",
+    "builtin:BasicAggregator": "Aggregator",
+    "builtin:Filter": "Filter",
+    "builtin:Sleep": "Sleep",
+    "builtin:SetVariable": "Set variable",
+    "builtin:SetVariable2": "Set multiple variables",
+}
+
+
+def _describe_module(raw: dict, position: int) -> BlueprintModule:
+    module_full = raw.get("module") or ""
+    app, _, module_name = module_full.partition(":")
+    label = _APP_LABELS.get(module_full, "")
+    routes = raw.get("routes") or []
+    return BlueprintModule(
+        id=str(raw.get("id", position)),
+        title=raw.get("label") or label or module_name or module_full or f"Module {position}",
+        position=position,
+        module_id=int(raw.get("id") or 0),
+        app=app or ("router" if module_full == "builtin:BasicRouter" else ""),
+        module=module_name or module_full,
+        label=label,
+        is_router=module_full == "builtin:BasicRouter",
+        branch_count=len(routes) if routes else 0,
+    )
+
+
+def _flatten_blueprint_modules(flow: list) -> list[BlueprintModule]:
+    """Make numbers modules in editor order, including inside router
+    branches, depth-first -- so this walks flow[] the same way, flattening
+    router routes[] in place so 'module 7' matches what the user sees in
+    the Make editor's own module numbering."""
+    out: list[BlueprintModule] = []
+    position = 0
+
+    def walk(nodes: list):
+        nonlocal position
+        for node in nodes:
+            position += 1
+            out.append(_describe_module(node, position))
+            routes = node.get("routes") or []
+            for route in routes:
+                walk(route.get("flow") or [])
+
+    walk(flow)
+    return out
+
+
+@chat.function(
+    "get_scenario_blueprint",
+    "Read a scenario's actual module list (blueprint) -- what each "
+    "numbered step in the flow is and does, in the same order the Make "
+    "editor numbers them. This is how to answer 'what is module N' or "
+    "'what does the Nth step do'.",
+    action_type="read",
+    chain_callable=True,
+    data_model=BlueprintModuleList,
+)
+async def get_scenario_blueprint(ctx, params: GetScenarioBlueprintParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id, draft=params.draft)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    flow = blueprint.get("flow") or []
+    modules = _flatten_blueprint_modules(flow)
+    scenario_name = blueprint.get("name") or ""
+    result = BlueprintModuleList(
+        items=modules, total=len(modules),
+        scenario_id=params.scenario_id, scenario_name=scenario_name,
+    )
+    return ActionResult.success(
+        result,
+        summary=f"Scenario has {len(modules)} module(s).",
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 7: connections.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+@chat.function(
+    "list_connections",
+    "List the app connections in your Make team -- what a scenario's "
+    "modules actually authenticate as (which account/app each connection "
+    "is for, and whether it's about to expire).",
+    action_type="read",
+    chain_callable=True,
+    data_model=MakeConnectionList,
+)
+async def list_connections(ctx, params: ListConnectionsParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    team_id = await _get_team_scope(ctx)
+    if not team_id:
+        return ActionResult.error(
+            "No team selected yet. Run select_team first.", code="MAKE_NO_TEAM_SCOPE",
+        )
+    try:
+        raw = await mc.list_connections(ctx, token, zone, team_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    items = [
+        MakeConnection(
+            id=str(c.get("id", "")), title=c.get("name") or c.get("accountName") or f"Connection {c.get('id')}",
+            connection_id=int(c.get("id") or 0), account_type=c.get("accountType") or "",
+            account_label=c.get("accountLabel") or "", expires=c.get("expire") or "",
+            editable=c.get("editable", True),
+        )
+        for c in raw
+    ]
+    return ActionResult.success(MakeConnectionList(items=items, total=len(items)))
+
+
+@chat.function(
+    "delete_connection",
+    "Permanently delete a Make connection. Any scenario using it will "
+    "stop working once it's gone.",
+    action_type="write",
+    chain_callable=True,
+    data_model=DeleteResult,
+)
+async def delete_connection(ctx, params: DeleteConnectionParams) -> ActionResult:
+    if not params.confirm:
+        return ActionResult.error(
+            "Set confirm=true to delete this connection -- scenarios using it will break.",
+            code="MAKE_CONFIRM_REQUIRED",
+        )
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        deleted_id = await mc.delete_connection(ctx, token, zone, params.connection_id, confirmed=True)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        DeleteResult(id=str(deleted_id), deleted=True),
+        summary=f"Connection {deleted_id} deleted.",
+    )
+
+
+@chat.function(
+    "rename_connection",
+    "Rename a Make connection's display name.",
+    action_type="write",
+    chain_callable=True,
+    data_model=MakeConnection,
+)
+async def rename_connection(ctx, params: RenameConnectionParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        c = await mc.rename_connection(ctx, token, zone, params.connection_id, params.name)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        MakeConnection(
+            id=str(c.get("id", params.connection_id)), title=c.get("name") or params.name,
+            connection_id=params.connection_id,
+        ),
+        summary="Connection renamed.",
+    )
+
+
+@chat.function(
+    "verify_connection",
+    "Test whether a Make connection's credentials still work.",
+    action_type="read",
+    chain_callable=True,
+    data_model=ConnectionVerifyResult,
+)
+async def verify_connection(ctx, params: VerifyConnectionParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        ok = await mc.verify_connection(ctx, token, zone, params.connection_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        ConnectionVerifyResult(connection_id=params.connection_id, verified=ok),
+        summary="Connection is valid." if ok else "Connection failed verification.",
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 8: data stores.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+@chat.function(
+    "list_data_stores",
+    "List the data stores (Make's own key/value storage) in your team, "
+    "with record counts and size.",
+    action_type="read",
+    chain_callable=True,
+    data_model=MakeDataStoreList,
+)
+async def list_data_stores(ctx, params: ListDataStoresParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    team_id = await _get_team_scope(ctx)
+    if not team_id:
+        return ActionResult.error("No team selected yet. Run select_team first.", code="MAKE_NO_TEAM_SCOPE")
+    try:
+        raw = await mc.list_data_stores(ctx, token, zone, team_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    items = [
+        MakeDataStore(
+            id=str(d.get("id", "")), title=d.get("name", ""), data_store_id=int(d.get("id") or 0),
+            records=d.get("records", 0), size=d.get("size", 0), max_size=d.get("maxSize", 0),
+        )
+        for d in raw
+    ]
+    return ActionResult.success(MakeDataStoreList(items=items, total=len(items)))
+
+
+@chat.function(
+    "create_data_store",
+    "Create a new Make data store (key/value storage a scenario can read/write).",
+    action_type="write",
+    chain_callable=True,
+    data_model=MakeDataStore,
+)
+async def create_data_store(ctx, params: CreateDataStoreParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    team_id = await _get_team_scope(ctx)
+    if not team_id:
+        return ActionResult.error("No team selected yet. Run select_team first.", code="MAKE_NO_TEAM_SCOPE")
+    try:
+        d = await mc.create_data_store(
+            ctx, token, zone, team_id, params.name,
+            max_size_mb=params.max_size_mb, data_structure_id=params.data_structure_id,
+        )
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        MakeDataStore(
+            id=str(d.get("id", "")), title=d.get("name", params.name),
+            data_store_id=int(d.get("id") or 0), max_size=d.get("maxSize", 0),
+        ),
+        summary=f"Data store '{params.name}' created.",
+    )
+
+
+@chat.function(
+    "delete_data_store",
+    "Permanently delete a Make data store and all of its records.",
+    action_type="write",
+    chain_callable=True,
+    data_model=DeleteResult,
+)
+async def delete_data_store(ctx, params: DeleteDataStoreParams) -> ActionResult:
+    if not params.confirm:
+        return ActionResult.error(
+            "Set confirm=true to delete this data store -- all its records will be lost.",
+            code="MAKE_CONFIRM_REQUIRED",
+        )
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        deleted_id = await mc.delete_data_store(ctx, token, zone, params.data_store_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        DeleteResult(id=str(deleted_id), deleted=True),
+        summary=f"Data store {deleted_id} deleted.",
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 9: hooks (Make's incoming webhooks/mailhooks -- triggers scenarios
+# listen on; distinct from Срез 5's OUTGOING webhook).
+# ──────────────────────────────────────────────────────────────────────────
+
+
+@chat.function(
+    "list_hooks",
+    "List the incoming webhooks/mailhooks (Make 'hooks') in your team -- "
+    "the triggers scenarios listen on, with their URL and whether they're "
+    "enabled.",
+    action_type="read",
+    chain_callable=True,
+    data_model=MakeHookList,
+)
+async def list_hooks(ctx, params: ListHooksParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    team_id = await _get_team_scope(ctx)
+    if not team_id:
+        return ActionResult.error("No team selected yet. Run select_team first.", code="MAKE_NO_TEAM_SCOPE")
+    try:
+        raw = await mc.list_hooks(ctx, token, zone, team_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    items = [
+        MakeHook(
+            id=str(h.get("id", "")), title=h.get("name", ""), hook_id=int(h.get("id") or 0),
+            type_name=h.get("typeName") or h.get("type") or "", url=h.get("url", ""),
+            enabled=h.get("enabled", True), scenario_id=h.get("scenarioId"),
+            queue_count=h.get("queueCount", 0),
+        )
+        for h in raw
+    ]
+    return ActionResult.success(MakeHookList(items=items, total=len(items)))
+
+
+@chat.function(
+    "set_hook_enabled",
+    "Enable or disable a Make hook (incoming webhook/mailhook) without "
+    "deleting it.",
+    action_type="write",
+    chain_callable=True,
+    data_model=MakeHook,
+)
+async def set_hook_enabled(ctx, params: SetHookEnabledParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        ok = await mc.set_hook_enabled(ctx, token, zone, params.hook_id, params.enabled)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    verb = "enabled" if params.enabled else "disabled"
+    return ActionResult.success(
+        MakeHook(id=str(params.hook_id), hook_id=params.hook_id, enabled=params.enabled),
+        summary=f"Hook {params.hook_id} {verb}." if ok else f"Hook {params.hook_id} {verb} (unconfirmed).",
+    )
+
+
+@chat.function(
+    "delete_hook",
+    "Permanently remove a Make hook. Any scenario using it will stop "
+    "working once it's gone.",
+    action_type="write",
+    chain_callable=True,
+    data_model=DeleteResult,
+)
+async def delete_hook(ctx, params: DeleteHookParams) -> ActionResult:
+    if not params.confirm:
+        return ActionResult.error(
+            "Set confirm=true to delete this hook -- scenarios using it will break.",
+            code="MAKE_CONFIRM_REQUIRED",
+        )
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        deleted_id = await mc.delete_hook(ctx, token, zone, params.hook_id, confirmed=True)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        DeleteResult(id=str(deleted_id), deleted=True),
+        summary=f"Hook {deleted_id} deleted.",
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 10: incomplete executions (DLQ) -- failed runs held for manual fix.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+@chat.function(
+    "list_incomplete_executions",
+    "List a scenario's incomplete executions (failed runs held for manual "
+    "resolution instead of being discarded) -- what failed, when, and "
+    "whether it's already resolved.",
+    action_type="read",
+    chain_callable=True,
+    data_model=IncompleteExecutionList,
+)
+async def list_incomplete_executions(ctx, params: ListIncompleteExecutionsParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        raw = await mc.list_incomplete_executions(ctx, token, zone, params.scenario_id, status=params.status)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    items = [
+        IncompleteExecution(
+            id=str(e.get("id", "")), title=e.get("reason") or f"Execution {e.get('id')}",
+            reason=e.get("reason", ""), created=e.get("created", ""), size=e.get("size", 0),
+            resolved=bool(e.get("resolved")), retry=bool(e.get("retry")), attempts=e.get("attempts", 0),
+        )
+        for e in raw
+    ]
+    return ActionResult.success(IncompleteExecutionList(items=items, total=len(items)))
+
+
+@chat.function(
+    "retry_incomplete_execution",
+    "Retry one incomplete (failed) scenario execution after fixing the "
+    "underlying issue.",
+    action_type="write",
+    chain_callable=True,
+    data_model=IncompleteExecution,
+)
+async def retry_incomplete_execution(ctx, params: RetryIncompleteExecutionParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        await mc.retry_incomplete_execution(ctx, token, zone, params.dlq_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        IncompleteExecution(id=params.dlq_id, retry=True),
+        summary=f"Retry requested for incomplete execution {params.dlq_id}.",
+    )
+
+
+@chat.function(
+    "delete_incomplete_executions",
+    "Permanently delete one scenario's incomplete executions -- explicit "
+    "ids, or all=true with confirm=true to clear every one.",
+    action_type="write",
+    chain_callable=True,
+    data_model=BulkDeleteResult,
+)
+async def delete_incomplete_executions(ctx, params: DeleteIncompleteExecutionsParams) -> ActionResult:
+    if params.all and not params.confirm:
+        return ActionResult.error(
+            "Set confirm=true to delete ALL incomplete executions for this scenario.",
+            code="MAKE_CONFIRM_REQUIRED",
+        )
+    if not params.all and not params.dlq_ids:
+        return ActionResult.error(
+            "Pass explicit dlq_ids, or all=true with confirm=true.",
+            code="MAKE_MISSING_IDS",
+        )
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        deleted = await mc.delete_incomplete_executions(
+            ctx, token, zone, params.scenario_id,
+            ids=params.dlq_ids or None, all_=params.all, confirmed=params.confirm,
+        )
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    ids = [str(d) for d in deleted] if isinstance(deleted, list) else params.dlq_ids
+    return ActionResult.success(
+        BulkDeleteResult(deleted_count=len(ids), ids=ids),
+        summary=f"Deleted {len(ids)} incomplete execution(s).",
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 11: bulk operations -- batched versions of the single-item write
+# tools, targeted by explicit id lists (never inferred), same federal
+# convention as the platform's other bulk_* tools.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+@chat.function(
+    "bulk_set_scenario_active",
+    "Activate or deactivate SEVERAL Make scenarios in one call by "
+    "explicit scenario ids.",
+    action_type="write",
+    chain_callable=True,
+    data_model=BulkScenarioStateResult,
+    event="make-com-connector.bulk_set_scenario_active",
+    effects=["make.scenario.bulk_state_changed"],
+)
+async def bulk_set_scenario_active(ctx, params: BulkSetScenarioActiveParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    succeeded: list[int] = []
+    failed: list[dict] = []
+    for sid in params.scenario_ids:
+        try:
+            if params.active:
+                await mc.start_scenario(ctx, token, zone, sid)
+            else:
+                await mc.stop_scenario(ctx, token, zone, sid)
+            succeeded.append(sid)
+        except mc.ProviderError as exc:
+            failed.append({"scenario_id": sid, "error": str(exc)})
+    verb = "activated" if params.active else "deactivated"
+    return ActionResult.success(
+        BulkScenarioStateResult(succeeded_ids=succeeded, failed=failed, active=params.active),
+        summary=f"{len(succeeded)} scenario(s) {verb}, {len(failed)} failed.",
+        refresh_panels=["make_connect"],
+    )
+
+
+@chat.function(
+    "bulk_run_scenarios",
+    "Run SEVERAL Make scenarios right now, by explicit scenario ids. "
+    "Executes real actions in each scenario immediately -- no dry-run, "
+    "always requires confirm=true.",
+    action_type="write",
+    chain_callable=True,
+    data_model=BulkRunResult,
+    event="make-com-connector.bulk_run_scenarios",
+    effects=["make.scenario.bulk_run"],
+)
+async def bulk_run_scenarios(ctx, params: BulkRunScenariosParams) -> ActionResult:
+    if not params.confirm:
+        return ActionResult.error(
+            "Running scenarios executes their real actions right now, for "
+            "every listed id, with no dry-run or undo. Pass confirm=true "
+            "if that is really the intent.",
+            code="MAKE_CONFIRM_REQUIRED",
+        )
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    succeeded: list[dict] = []
+    failed: list[dict] = []
+    for sid in params.scenario_ids:
+        try:
+            result = await mc.run_scenario(ctx, token, zone, sid)
+            execs = result.get("executions") or [{}]
+            first = execs[0] if execs else {}
+            succeeded.append({
+                "scenario_id": sid,
+                "execution_id": str(first.get("id", "") or result.get("executionId", "")),
+                "status": str(first.get("status", "") or result.get("status", "")),
+            })
+        except mc.ProviderError as exc:
+            failed.append({"scenario_id": sid, "error": str(exc)})
+    return ActionResult.success(
+        BulkRunResult(succeeded=succeeded, failed=failed),
+        summary=f"{len(succeeded)} scenario(s) run, {len(failed)} failed.",
+    )
+
+
+@chat.function(
+    "bulk_delete_connections",
+    "Permanently delete SEVERAL Make connections at once, by explicit "
+    "connection ids. Any scenario using one will stop working once it's "
+    "gone.",
+    action_type="write",
+    chain_callable=True,
+    data_model=BulkDeleteResult,
+)
+async def bulk_delete_connections(ctx, params: BulkDeleteConnectionsParams) -> ActionResult:
+    if not params.confirm:
+        return ActionResult.error(
+            "Set confirm=true to delete these connections -- scenarios using them will break.",
+            code="MAKE_CONFIRM_REQUIRED",
+        )
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    deleted: list[str] = []
+    failed: list[dict] = []
+    for cid in params.connection_ids:
+        try:
+            did = await mc.delete_connection(ctx, token, zone, cid, confirmed=True)
+            deleted.append(str(did))
+        except mc.ProviderError as exc:
+            failed.append({"connection_id": cid, "error": str(exc)})
+    return ActionResult.success(
+        BulkDeleteResult(deleted_count=len(deleted), ids=deleted, failed=failed),
+        summary=f"{len(deleted)} connection(s) deleted, {len(failed)} failed.",
+    )
+
+
+@chat.function(
+    "bulk_delete_hooks",
+    "Permanently remove SEVERAL Make hooks at once, by explicit hook "
+    "ids. Any scenario using one will stop working once it's gone.",
+    action_type="write",
+    chain_callable=True,
+    data_model=BulkDeleteResult,
+)
+async def bulk_delete_hooks(ctx, params: BulkDeleteHooksParams) -> ActionResult:
+    if not params.confirm:
+        return ActionResult.error(
+            "Set confirm=true to delete these hooks -- scenarios using them will break.",
+            code="MAKE_CONFIRM_REQUIRED",
+        )
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    deleted: list[str] = []
+    failed: list[dict] = []
+    for hid in params.hook_ids:
+        try:
+            did = await mc.delete_hook(ctx, token, zone, hid, confirmed=True)
+            deleted.append(str(did))
+        except mc.ProviderError as exc:
+            failed.append({"hook_id": hid, "error": str(exc)})
+    return ActionResult.success(
+        BulkDeleteResult(deleted_count=len(deleted), ids=deleted, failed=failed),
+        summary=f"{len(deleted)} hook(s) deleted, {len(failed)} failed.",
+    )
