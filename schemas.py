@@ -370,6 +370,7 @@ class DeleteIncompleteExecutionsParams(BaseModel):
 class BulkDeleteResult(sdl.Entity):
     deleted_count: int = 0
     ids: list[str] = Field(default_factory=list)
+    failed: list[dict] = Field(default_factory=list)
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -389,6 +390,7 @@ class BulkSetScenarioActiveParams(BaseModel):
 class BulkScenarioStateResult(sdl.Entity):
     succeeded: list[int] = Field(default_factory=list)
     failed: dict[str, str] = Field(default_factory=dict)
+    active: bool = False
 
 
 class BulkRunScenariosParams(BaseModel):

@@ -989,8 +989,9 @@ async def bulk_set_scenario_active(ctx, params: BulkSetScenarioActiveParams) -> 
         except mc.ProviderError as exc:
             failed.append({"scenario_id": sid, "error": str(exc)})
     verb = "activated" if params.active else "deactivated"
+    failed_map = {str(f["scenario_id"]): f["error"] for f in failed}
     return ActionResult.success(
-        BulkScenarioStateResult(succeeded_ids=succeeded, failed=failed, active=params.active),
+        BulkScenarioStateResult(succeeded=succeeded, failed=failed_map, active=params.active),
         summary=f"{len(succeeded)} scenario(s) {verb}, {len(failed)} failed.",
         refresh_panels=["make_connect"],
     )
@@ -1280,7 +1281,7 @@ async def delete_scenario(ctx, params: DeleteScenarioParams) -> ActionResult:
     except mc.ProviderError as exc:
         return ActionResult.error(str(exc), code=exc.code)
     return ActionResult.success(
-        DeleteResult(deleted_id=str(did)),
+        DeleteResult(deleted=True, id=str(did)),
         summary=f"Scenario {params.scenario_id} moved to Trash (recoverable for 30 days).",
         refresh_panels=["make_connect"],
     )
@@ -1438,7 +1439,7 @@ async def delete_buildtime_variable(ctx, params: DeleteBuildtimeVariableParams) 
         await mc.delete_buildtime_variable(ctx, token, zone, params.scenario_id, params.name)
     except mc.ProviderError as exc:
         return ActionResult.error(str(exc), code=exc.code)
-    return ActionResult.success(DeleteResult(deleted_id=params.name), summary=f"Variable '{params.name}' deleted.")
+    return ActionResult.success(DeleteResult(deleted=True, id=params.name), summary=f"Variable '{params.name}' deleted.")
 
 
 @chat.function(
@@ -1903,6 +1904,12 @@ async def list_api_tokens(ctx, params: ListApiTokensParams) -> ActionResult:
     effects=["make.api_token.created"],
 )
 async def create_api_token(ctx, params: CreateApiTokenParams) -> ActionResult:
+    if not params.confirm:
+        return ActionResult.error(
+            "This creates a real, usable Make API credential. Pass "
+            "confirm=true if that is really the intent.",
+            code="MAKE_CONFIRM_REQUIRED",
+        )
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1912,8 +1919,8 @@ async def create_api_token(ctx, params: CreateApiTokenParams) -> ActionResult:
         return ActionResult.error(str(exc), code=exc.code)
     result = CreatedApiToken(
         id=str(raw.get("id", "")), title=params.label,
-        label=params.label, token_secret=str(raw.get("token", "")),
-        scope=raw.get("scope") or params.scope,
+        token=str(raw.get("token", "")),
+        label=params.label, scope=raw.get("scope") or params.scope,
     )
     return ActionResult.success(
         result,
@@ -1937,12 +1944,12 @@ async def delete_api_token(ctx, params: DeleteApiTokenParams) -> ActionResult:
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
-        await mc.delete_api_token(ctx, token, zone, params.token_id)
+        await mc.delete_api_token(ctx, token, zone, params.created_timestamp)
     except mc.ProviderError as exc:
         return ActionResult.error(str(exc), code=exc.code)
     return ActionResult.success(
-        DeleteResult(deleted=True, id=str(params.token_id)),
-        summary=f"API token {params.token_id} deleted.",
+        DeleteResult(deleted=True, id=params.created_timestamp),
+        summary=f"API token (created {params.created_timestamp}) deleted.",
     )
 
 

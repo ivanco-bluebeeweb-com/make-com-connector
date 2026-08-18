@@ -46,6 +46,59 @@
             "title": "Title",
             "type": "string"
           },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
           "connected": {
             "default": false,
             "title": "Connected",
@@ -77,6 +130,7 @@
       ],
       "id_projection": "",
       "params_schema": {
+        "description": "Explicit empty params model -- V17 disallows untyped handlers.",
         "properties": {},
         "title": "NoParams",
         "type": "object"
@@ -92,6 +146,59 @@
             "default": "",
             "title": "Title",
             "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
           },
           "connected": {
             "default": false,
@@ -122,6 +229,7 @@
       "effects": [],
       "id_projection": "",
       "params_schema": {
+        "description": "Explicit empty params model -- V17 disallows untyped handlers.",
         "properties": {},
         "title": "NoParams",
         "type": "object"
@@ -137,6 +245,59 @@
             "default": "",
             "title": "Title",
             "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
           },
           "connected": {
             "default": false,
@@ -167,6 +328,7 @@
       "effects": [],
       "id_projection": "",
       "params_schema": {
+        "description": "Explicit empty params model -- V17 disallows untyped handlers.",
         "properties": {},
         "title": "NoParams",
         "type": "object"
@@ -174,6 +336,7 @@
       "return_schema": {
         "$defs": {
           "MakeTeam": {
+            "description": "One team the connected account belongs to. Surfaced so the user can\npick a team explicitly when their organization has more than one --\nMake's own /scenarios endpoint requires exactly one of team_id/\norganization_id, so an account with multiple teams cannot be defaulted\nsilently without risking the wrong team's scenarios being shown.",
             "properties": {
               "id": {
                 "default": "",
@@ -184,6 +347,59 @@
                 "default": "",
                 "title": "Title",
                 "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Status"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Url"
               },
               "organization_id": {
                 "default": 0,
@@ -205,14 +421,41 @@
             "type": "array"
           },
           "total": {
-            "default": 0,
-            "title": "Total",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
           }
         },
+        "required": [
+          "items"
+        ],
         "title": "MakeTeamList",
         "type": "object",
-        "x-sdl": "entity_list"
+        "x-sdl": "entity-list"
       },
       "event": "",
       "background": false,
@@ -255,6 +498,59 @@
             "title": "Title",
             "type": "string"
           },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
           "connected": {
             "default": false,
             "title": "Connected",
@@ -287,6 +583,7 @@
         "properties": {
           "limit": {
             "default": 50,
+            "description": "Max scenarios to return per page.",
             "maximum": 200,
             "minimum": 1,
             "title": "Limit",
@@ -294,6 +591,7 @@
           },
           "offset": {
             "default": 0,
+            "description": "Pagination offset.",
             "minimum": 0,
             "title": "Offset",
             "type": "integer"
@@ -315,6 +613,59 @@
                 "default": "",
                 "title": "Title",
                 "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Status"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Url"
               },
               "scenario_id": {
                 "default": 0,
@@ -342,9 +693,16 @@
                 "type": "boolean"
               },
               "folder_id": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "default": null,
-                "title": "Folder Id",
-                "type": "integer"
+                "title": "Folder Id"
               },
               "last_edit": {
                 "default": "",
@@ -371,14 +729,41 @@
             "type": "array"
           },
           "total": {
-            "default": 0,
-            "title": "Total",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
           }
         },
+        "required": [
+          "items"
+        ],
         "title": "MakeScenarioList",
         "type": "object",
-        "x-sdl": "entity_list"
+        "x-sdl": "entity-list"
       },
       "event": "",
       "background": false,
@@ -427,6 +812,52 @@
             "title": "Title",
             "type": "string"
           },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "default": "",
+            "title": "Status",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
           "scenario_id": {
             "default": 0,
             "title": "Scenario Id",
@@ -435,11 +866,6 @@
           "execution_id": {
             "default": "",
             "title": "Execution Id",
-            "type": "string"
-          },
-          "status": {
-            "default": "",
-            "title": "Status",
             "type": "string"
           }
         },
@@ -494,6 +920,59 @@
             "title": "Title",
             "type": "string"
           },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
           "scenario_id": {
             "default": 0,
             "title": "Scenario Id",
@@ -538,6 +1017,74 @@
       },
       "return_schema": {
         "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
           "configured": {
             "default": false,
             "title": "Configured",
@@ -549,6 +1096,10 @@
             "type": "string"
           }
         },
+        "required": [
+          "id",
+          "title"
+        ],
         "title": "OutgoingWebhookStatus",
         "type": "object",
         "x-sdl": "entity"
@@ -567,12 +1118,81 @@
       "effects": [],
       "id_projection": "",
       "params_schema": {
+        "description": "Explicit empty params model -- V17 disallows untyped handlers.",
         "properties": {},
         "title": "NoParams",
         "type": "object"
       },
       "return_schema": {
         "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
           "configured": {
             "default": false,
             "title": "Configured",
@@ -584,6 +1204,10 @@
             "type": "string"
           }
         },
+        "required": [
+          "id",
+          "title"
+        ],
         "title": "OutgoingWebhookStatus",
         "type": "object",
         "x-sdl": "entity"
@@ -606,6 +1230,7 @@
       "params_schema": {
         "properties": {
           "payload": {
+            "additionalProperties": true,
             "description": "JSON-serializable payload to POST to the configured Make webhook URL -- shape is whatever the receiving Make scenario expects.",
             "title": "Payload",
             "type": "object"
@@ -616,6 +1241,74 @@
       },
       "return_schema": {
         "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
           "delivered": {
             "default": false,
             "title": "Delivered",
@@ -632,6 +1325,10 @@
             "type": "string"
           }
         },
+        "required": [
+          "id",
+          "title"
+        ],
         "title": "WebhookDeliveryResult",
         "type": "object",
         "x-sdl": "entity"
@@ -1004,7 +1701,7 @@
         ],
         "title": "MakeConnectionList",
         "type": "object",
-        "x-sdl": "entity_list"
+        "x-sdl": "entity-list"
       },
       "event": "",
       "background": false,
@@ -1514,7 +2211,7 @@
         ],
         "title": "MakeDataStoreList",
         "type": "object",
-        "x-sdl": "entity_list"
+        "x-sdl": "entity-list"
       },
       "event": "",
       "background": false,
@@ -1922,7 +2619,7 @@
         ],
         "title": "MakeHookList",
         "type": "object",
-        "x-sdl": "entity_list"
+        "x-sdl": "entity-list"
       },
       "event": "",
       "background": false,
@@ -2348,7 +3045,7 @@
         ],
         "title": "IncompleteExecutionList",
         "type": "object",
-        "x-sdl": "entity_list"
+        "x-sdl": "entity-list"
       },
       "event": "",
       "background": false,
@@ -2605,6 +3302,14 @@
             },
             "title": "Ids",
             "type": "array"
+          },
+          "failed": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Failed",
+            "type": "array"
           }
         },
         "required": [
@@ -2738,6 +3443,11 @@
             },
             "title": "Failed",
             "type": "object"
+          },
+          "active": {
+            "default": false,
+            "title": "Active",
+            "type": "boolean"
           }
         },
         "required": [
@@ -3000,6 +3710,14 @@
             },
             "title": "Ids",
             "type": "array"
+          },
+          "failed": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Failed",
+            "type": "array"
           }
         },
         "required": [
@@ -3128,6 +3846,14 @@
               "type": "string"
             },
             "title": "Ids",
+            "type": "array"
+          },
+          "failed": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Failed",
             "type": "array"
           }
         },
