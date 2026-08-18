@@ -127,6 +127,8 @@ async def disconnect_make(ctx, params: NoParams) -> ActionResult:
     data_model=ProviderConnection,
 )
 async def get_make_connection(ctx, params: NoParams) -> ActionResult:
+    """Read-only status check -- never returns the saved token/zone values,
+    only whether a token+zone pair is currently stored."""
     token, zone = await _get_credentials(ctx)
     connected = bool(token and zone)
     return ActionResult.success(

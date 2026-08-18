@@ -161,7 +161,6 @@ def _webhook_card(configured: bool) -> ui.UINode:
                 ui.Input(
                     placeholder="Paste a Make Custom Webhook URL...",
                     param_name="webhook_url",
-                    type="url",
                 ),
             ],
             submit_label="Save webhook",
