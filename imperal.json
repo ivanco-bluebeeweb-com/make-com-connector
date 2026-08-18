@@ -5861,6 +5861,716 @@
         "x-sdl": "entity"
       },
       "event": "make-com-connector.apply_delete_blueprint_module"
+    },
+    {
+      "name": "list_organizations",
+      "description": "List the Make.com organizations the connected account belongs to -- the level above teams (an organization can contain several teams).",
+      "action_type": "read",
+      "chain_callable": true,
+      "params_schema": {
+        "properties": {},
+        "title": "ListOrganizationsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "MakeOrganization": {
+            "properties": {
+              "id": {
+                "default": "",
+                "title": "Id",
+                "type": "string"
+              },
+              "title": {
+                "default": "",
+                "title": "Title",
+                "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Status"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Url"
+              },
+              "org_id": {
+                "default": 0,
+                "title": "Org Id",
+                "type": "integer"
+              },
+              "name": {
+                "default": "",
+                "title": "Name",
+                "type": "string"
+              },
+              "country": {
+                "default": "",
+                "title": "Country",
+                "type": "string"
+              },
+              "timezone": {
+                "default": "",
+                "title": "Timezone",
+                "type": "string"
+              }
+            },
+            "title": "MakeOrganization",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/MakeOrganization"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "MakeOrganizationList",
+        "type": "object",
+        "x-sdl": "entity-list"
+      }
+    },
+    {
+      "name": "list_team_members",
+      "description": "List the people with access to a Make team and their role -- Team Member, Team Admin, Team Monitoring, or a custom org role (shown by its numeric id).",
+      "action_type": "read",
+      "chain_callable": true,
+      "params_schema": {
+        "properties": {
+          "team_id": {
+            "description": "Make team id (see list_make_teams).",
+            "title": "Team Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "team_id"
+        ],
+        "title": "ListTeamMembersParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "TeamMember": {
+            "description": "One user's access to a team. `role_name` is resolved for Make's own\nbuilt-in roles (Team Member/Team Admin/Team Monitoring); a custom org\nrole shows its raw numeric id instead since custom role names aren't\nfetchable from this endpoint alone.",
+            "properties": {
+              "id": {
+                "default": "",
+                "title": "Id",
+                "type": "string"
+              },
+              "title": {
+                "default": "",
+                "title": "Title",
+                "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Status"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Url"
+              },
+              "user_id": {
+                "default": 0,
+                "title": "User Id",
+                "type": "integer"
+              },
+              "team_id": {
+                "default": 0,
+                "title": "Team Id",
+                "type": "integer"
+              },
+              "role_id": {
+                "default": 0,
+                "title": "Role Id",
+                "type": "integer"
+              },
+              "role_name": {
+                "default": "",
+                "title": "Role Name",
+                "type": "string"
+              },
+              "changeable": {
+                "default": true,
+                "title": "Changeable",
+                "type": "boolean"
+              }
+            },
+            "title": "TeamMember",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/TeamMember"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "team_id": {
+            "default": 0,
+            "title": "Team Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "TeamMemberList",
+        "type": "object",
+        "x-sdl": "entity-list"
+      }
+    },
+    {
+      "name": "list_api_tokens",
+      "description": "List the connected Make user's own API tokens -- label, scopes, creation date, and a masked form. Never exposes a usable secret; use create_api_token to mint a new one when a real value is needed.",
+      "action_type": "read",
+      "chain_callable": true,
+      "params_schema": {
+        "properties": {},
+        "title": "ListApiTokensParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "MakeApiToken": {
+            "description": "One of the CONNECTED user's own Make API tokens -- not the token\nsaved for this connector's own Make session (that one stays hidden as\nalways); `token` here is the last-4-chars-masked form Make itself\nreturns for existing tokens, so listing this never exposes a usable\nsecret.",
+            "properties": {
+              "id": {
+                "default": "",
+                "title": "Id",
+                "type": "string"
+              },
+              "title": {
+                "default": "",
+                "title": "Title",
+                "type": "string"
+              },
+              "kind": {
+                "default": "",
+                "title": "Kind",
+                "type": "string"
+              },
+              "subtitle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Subtitle"
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Description"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Status"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Url"
+              },
+              "label": {
+                "default": "",
+                "title": "Label",
+                "type": "string"
+              },
+              "scope": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Scope",
+                "type": "array"
+              },
+              "created": {
+                "default": "",
+                "title": "Created",
+                "type": "string"
+              },
+              "token_masked": {
+                "default": "",
+                "title": "Token Masked",
+                "type": "string"
+              }
+            },
+            "title": "MakeApiToken",
+            "type": "object",
+            "x-sdl": "entity"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/MakeApiToken"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Page"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "MakeApiTokenList",
+        "type": "object",
+        "x-sdl": "entity-list"
+      }
+    },
+    {
+      "name": "create_api_token",
+      "description": "Create a brand-new Make API token for the CONNECTED user's own account. The secret value is returned exactly ONCE, same as Make's own UI -- it cannot be retrieved again afterwards. This mints a real, usable credential -- treat it like creating a password.",
+      "action_type": "write",
+      "chain_callable": true,
+      "params_schema": {
+        "properties": {
+          "label": {
+            "description": "Label shown in the Make user profile for this token.",
+            "title": "Label",
+            "type": "string"
+          },
+          "scope": {
+            "description": "Make API scopes to grant, e.g. ['scenarios:read','scenarios:write']. Full list via Make's own /enums/user-api-tokes-scopes.",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Scope",
+            "type": "array"
+          },
+          "confirm": {
+            "default": false,
+            "description": "Must be true. This creates a real, usable Make credential -- treat it like any other secret.",
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "scope"
+        ],
+        "title": "CreateApiTokenParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "description": "The newly created token's SECRET VALUE -- shown here exactly once,\nsame as Make's own UI. It is not retrievable again after this; if lost,\ndelete it and create a new one.",
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "token": {
+            "default": "",
+            "title": "Token",
+            "type": "string"
+          },
+          "label": {
+            "default": "",
+            "title": "Label",
+            "type": "string"
+          },
+          "scope": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Scope",
+            "type": "array"
+          },
+          "created": {
+            "default": "",
+            "title": "Created",
+            "type": "string"
+          }
+        },
+        "title": "CreatedApiToken",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "effects": [
+        "make.api_token.created"
+      ],
+      "event": "make-com-connector.create_api_token"
+    },
+    {
+      "name": "delete_api_token",
+      "description": "Permanently delete one of the connected user's own Make API tokens. Anything using it (external scripts, other integrations) stops working immediately.",
+      "action_type": "write",
+      "chain_callable": true,
+      "params_schema": {
+        "properties": {
+          "created_timestamp": {
+            "description": "The token's own 'created' timestamp from list_api_tokens (ISO 8601) -- Make identifies tokens by creation time, not a separate id.",
+            "title": "Created Timestamp",
+            "type": "string"
+          },
+          "confirm": {
+            "default": false,
+            "description": "Must be true. Anything using this token stops working immediately.",
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "created_timestamp"
+        ],
+        "title": "DeleteApiTokenParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "title": "Kind",
+            "type": "string"
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Subtitle"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url"
+          },
+          "deleted": {
+            "default": false,
+            "title": "Deleted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "DeleteResult",
+        "type": "object",
+        "x-sdl": "entity"
+      },
+      "effects": [
+        "make.api_token.deleted"
+      ],
+      "event": "make-com-connector.delete_api_token"
     }
   ],
   "signals": [],

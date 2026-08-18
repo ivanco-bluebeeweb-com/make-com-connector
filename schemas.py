@@ -644,3 +644,93 @@ class BlueprintModuleDeleteResult(sdl.Entity):
     scenario_id: int = 0
     deleted_module_id: int = 0
     total_modules: int = 0
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 17: account-level control -- organizations, team members/roles, and
+# the connected user's own API tokens.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+class ListOrganizationsParams(BaseModel):
+    pass
+
+
+class MakeOrganization(sdl.Entity):
+    id: str = ""
+    title: str = ""
+    org_id: int = 0
+    name: str = ""
+    country: str = ""
+    timezone: str = ""
+
+
+class MakeOrganizationList(sdl.EntityList[MakeOrganization]):
+    pass
+
+
+class ListTeamMembersParams(BaseModel):
+    team_id: int = Field(..., description="Make team id (see list_make_teams).")
+
+
+class TeamMember(sdl.Entity):
+    """One user's access to a team. `role_name` is resolved for Make's own
+    built-in roles (Team Member/Team Admin/Team Monitoring); a custom org
+    role shows its raw numeric id instead since custom role names aren't
+    fetchable from this endpoint alone."""
+    id: str = ""
+    title: str = ""
+    user_id: int = 0
+    team_id: int = 0
+    role_id: int = 0
+    role_name: str = ""
+    changeable: bool = True
+
+
+class TeamMemberList(sdl.EntityList[TeamMember]):
+    team_id: int = 0
+
+
+class ListApiTokensParams(BaseModel):
+    pass
+
+
+class MakeApiToken(sdl.Entity):
+    """One of the CONNECTED user's own Make API tokens -- not the token
+    saved for this connector's own Make session (that one stays hidden as
+    always); `token` here is the last-4-chars-masked form Make itself
+    returns for existing tokens, so listing this never exposes a usable
+    secret."""
+    id: str = ""
+    title: str = ""
+    label: str = ""
+    scope: list[str] = Field(default_factory=list)
+    created: str = ""
+    token_masked: str = ""
+
+
+class MakeApiTokenList(sdl.EntityList[MakeApiToken]):
+    pass
+
+
+class CreateApiTokenParams(BaseModel):
+    label: str = Field(..., description="Label shown in the Make user profile for this token.")
+    scope: list[str] = Field(..., min_length=1, description="Make API scopes to grant, e.g. ['scenarios:read','scenarios:write']. Full list via Make's own /enums/user-api-tokes-scopes.")
+    confirm: bool = Field(False, description="Must be true. This creates a real, usable Make credential -- treat it like any other secret.")
+
+
+class CreatedApiToken(sdl.Entity):
+    """The newly created token's SECRET VALUE -- shown here exactly once,
+    same as Make's own UI. It is not retrievable again after this; if lost,
+    delete it and create a new one."""
+    id: str = ""
+    title: str = ""
+    token: str = ""
+    label: str = ""
+    scope: list[str] = Field(default_factory=list)
+    created: str = ""
+
+
+class DeleteApiTokenParams(BaseModel):
+    created_timestamp: str = Field(..., description="The token's own 'created' timestamp from list_api_tokens (ISO 8601) -- Make identifies tokens by creation time, not a separate id.")
+    confirm: bool = Field(False, description="Must be true. Anything using this token stops working immediately.")

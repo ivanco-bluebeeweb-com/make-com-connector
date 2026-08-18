@@ -44,6 +44,10 @@ from schemas import (
     ApplyAddBlueprintModuleParams, BlueprintModuleAddResult,
     PreviewDeleteBlueprintModuleParams, BlueprintModuleDeletePreview,
     ApplyDeleteBlueprintModuleParams, BlueprintModuleDeleteResult,
+    ListOrganizationsParams, MakeOrganization, MakeOrganizationList,
+    ListTeamMembersParams, TeamMember, TeamMemberList,
+    ListApiTokensParams, MakeApiToken, MakeApiTokenList,
+    CreateApiTokenParams, CreatedApiToken, DeleteApiTokenParams,
 )
 from schemas import MakeScenario as _MakeScenario  # reused for create/clone/restore results
 
@@ -1764,4 +1768,154 @@ async def apply_delete_blueprint_module(ctx, params: ApplyDeleteBlueprintModuleP
         ),
         summary=f"Module {params.module_id} removed.",
         refresh_panels=["make_connect"],
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 17: account-level control -- organizations, team members/roles, and
+# the connected user's own API tokens. Last layer beyond scenarios/data:
+# WHO can see/change things, and what credentials exist.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+@chat.function(
+    "list_organizations",
+    "List the Make.com organizations the connected account belongs to -- "
+    "the level above teams (an organization can contain several teams).",
+    action_type="read",
+    chain_callable=True,
+    data_model=MakeOrganizationList,
+)
+async def list_organizations(ctx, params: ListOrganizationsParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        raw = await mc.list_organizations(ctx, token, zone)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    items = [
+        MakeOrganization(
+            id=str(o.get("id", "")), title=o.get("name", ""),
+            org_id=int(o.get("id") or 0), name=o.get("name", ""),
+            country=o.get("countryId") and str(o.get("countryId")) or "",
+            timezone=o.get("timezone", ""),
+        )
+        for o in raw
+    ]
+    return ActionResult.success(MakeOrganizationList(items=items, total=len(items)))
+
+
+@chat.function(
+    "list_team_members",
+    "List the people with access to a Make team and their role -- Team "
+    "Member, Team Admin, Team Monitoring, or a custom org role (shown by "
+    "its numeric id).",
+    action_type="read",
+    chain_callable=True,
+    data_model=TeamMemberList,
+)
+async def list_team_members(ctx, params: ListTeamMembersParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        raw = await mc.list_team_members(ctx, token, zone, params.team_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    items = [
+        TeamMember(
+            id=str(m.get("id", "")), title=f"User {m.get('userId', '')}",
+            user_id=int(m.get("userId") or 0), team_id=params.team_id,
+            role_id=int(m.get("roleId") or 0),
+            role_name=mc.MAKE_TEAM_ROLE_NAMES.get(m.get("roleId"), str(m.get("roleId", ""))),
+            changeable=bool(m.get("changeable", True)),
+        )
+        for m in raw
+    ]
+    return ActionResult.success(TeamMemberList(items=items, total=len(items), team_id=params.team_id))
+
+
+@chat.function(
+    "list_api_tokens",
+    "List the connected Make user's own API tokens -- label, scopes, "
+    "creation date, and a masked form. Never exposes a usable secret; use "
+    "create_api_token to mint a new one when a real value is needed.",
+    action_type="read",
+    chain_callable=True,
+    data_model=MakeApiTokenList,
+)
+async def list_api_tokens(ctx, params: ListApiTokensParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        raw = await mc.list_api_tokens(ctx, token, zone)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    items = [
+        MakeApiToken(
+            id=str(t.get("id", "")), title=t.get("label") or f"Token {t.get('id', '')}",
+            label=t.get("label", ""), scope=t.get("scope") or [],
+            created=str(t.get("createdAt", "")),
+            token_masked=str(t.get("token", "")),
+        )
+        for t in raw
+    ]
+    return ActionResult.success(MakeApiTokenList(items=items, total=len(items)))
+
+
+@chat.function(
+    "create_api_token",
+    "Create a brand-new Make API token for the CONNECTED user's own "
+    "account. The secret value is returned exactly ONCE, same as Make's "
+    "own UI -- it cannot be retrieved again afterwards. This mints a real, "
+    "usable credential -- treat it like creating a password.",
+    action_type="write",
+    chain_callable=True,
+    data_model=CreatedApiToken,
+    event="make-com-connector.create_api_token",
+    effects=["make.api_token.created"],
+)
+async def create_api_token(ctx, params: CreateApiTokenParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        raw = await mc.create_api_token(ctx, token, zone, label=params.label, scope=params.scope)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    result = CreatedApiToken(
+        id=str(raw.get("id", "")), title=params.label,
+        label=params.label, token_secret=str(raw.get("token", "")),
+        scope=raw.get("scope") or params.scope,
+    )
+    return ActionResult.success(
+        result,
+        summary=f"API token '{params.label}' created. Save the secret now -- it will not be shown again.",
+    )
+
+
+@chat.function(
+    "delete_api_token",
+    "Permanently delete one of the connected user's own Make API tokens. "
+    "Anything using it (external scripts, other integrations) stops "
+    "working immediately.",
+    action_type="write",
+    chain_callable=True,
+    data_model=DeleteResult,
+    event="make-com-connector.delete_api_token",
+    effects=["make.api_token.deleted"],
+)
+async def delete_api_token(ctx, params: DeleteApiTokenParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        await mc.delete_api_token(ctx, token, zone, params.token_id)
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    return ActionResult.success(
+        DeleteResult(deleted=True, id=str(params.token_id)),
+        summary=f"API token {params.token_id} deleted.",
     )

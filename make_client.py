@@ -587,3 +587,58 @@ async def stop_execution(ctx, token: str, zone: str, scenario_id: int, execution
         json={"force": force},
     )
     _check_status(resp, "stop execution")
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 17: account-level control -- organizations, team members/roles, and
+# the connected user's own API tokens. This is the last layer beyond
+# scenarios/data: WHO can see/change things, and what credentials exist.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+async def list_organizations(ctx, token: str, zone: str) -> list[dict]:
+    resp = await ctx.http.get(f"https://{zone}/api/v2/organizations", headers=_headers(token))
+    body = _check_status(resp, "list organizations")
+    return body.get("organizations") or []
+
+
+async def list_team_members(ctx, token: str, zone: str, team_id: int) -> list[dict]:
+    """GET /teams/{id}/user-team-roles -- who has access to this team and
+    their role id (not a role name; see MAKE_ROLE_NAMES for the common
+    ones -- Make's role catalog is org-customizable so an id can map to a
+    custom name we can't resolve without another call per org)."""
+    resp = await ctx.http.get(
+        f"https://{zone}/api/v2/teams/{team_id}/user-team-roles",
+        headers=_headers(token), params={"pg[limit]": 100},
+    )
+    body = _check_status(resp, "list team members")
+    return body.get("userTeamRoles") or []
+
+
+# Make's built-in team role ids are stable across orgs; custom roles (rare)
+# fall back to showing the raw id, which is still useful.
+MAKE_TEAM_ROLE_NAMES = {1: "Team Member", 2: "Team Admin", 3: "Team Monitoring"}
+
+
+async def list_api_tokens(ctx, token: str, zone: str) -> list[dict]:
+    resp = await ctx.http.get(f"https://{zone}/api/v2/users/me/api-tokens", headers=_headers(token))
+    body = _check_status(resp, "list API tokens")
+    return body.get("apiTokens") or []
+
+
+async def create_api_token(ctx, token: str, zone: str, *, label: str, scope: list[str]) -> dict:
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/users/me/api-tokens",
+        headers={**_headers(token), "Content-Type": "application/json"},
+        json={"label": label, "scope": scope},
+    )
+    body = _check_status(resp, "create API token")
+    return body.get("apiToken") or {}
+
+
+async def delete_api_token(ctx, token: str, zone: str, created_timestamp: str) -> None:
+    resp = await ctx.http.delete(
+        f"https://{zone}/api/v2/users/me/api-tokens/{created_timestamp}",
+        headers=_headers(token),
+    )
+    _check_status(resp, "delete API token")
