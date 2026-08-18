@@ -642,3 +642,33 @@ async def delete_api_token(ctx, token: str, zone: str, created_timestamp: str) -
         headers=_headers(token),
     )
     _check_status(resp, "delete API token")
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Срез 18: create_hook -- closes the hooks CRUD set (list/create/enable-
+# disable/delete). Per developers.make.com/api-reference/hooks: POST
+# /hooks requires name, teamId, typeName, method, headers, stringify;
+# connection_id/form_id are optional and app-specific.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+async def create_hook(
+    ctx, token: str, zone: str, *, name: str, team_id: int, type_name: str,
+    include_method: bool = False, include_headers: bool = False, stringify: bool = False,
+    connection_id: int | None = None, form_id: str | None = None,
+) -> dict:
+    payload: dict = {
+        "name": name, "teamId": team_id, "typeName": type_name,
+        "method": include_method, "headers": include_headers, "stringify": stringify,
+    }
+    if connection_id is not None:
+        payload["__IMTCONN__"] = connection_id
+    if form_id is not None:
+        payload["formId"] = form_id
+    resp = await ctx.http.post(
+        f"https://{zone}/api/v2/hooks",
+        headers={**_headers(token), "Content-Type": "application/json"},
+        json=payload,
+    )
+    body = _check_status(resp, "create hook")
+    return body.get("hook") or {}

@@ -48,6 +48,7 @@ from schemas import (
     ListTeamMembersParams, TeamMember, TeamMemberList,
     ListApiTokensParams, MakeApiToken, MakeApiTokenList,
     CreateApiTokenParams, CreatedApiToken, DeleteApiTokenParams,
+    CreateHookParams,
 )
 from schemas import MakeScenario as _MakeScenario  # reused for create/clone/restore results
 
@@ -1577,19 +1578,46 @@ async def stop_execution(ctx, params: StopExecutionParams) -> ActionResult:
 
 
 def _insert_after(flow: list, after_module_id: int | None, new_node: dict) -> bool:
-    """Insert new_node into flow (top-level only -- inside router branches
-    is deliberately out of scope for now, same as _find_module_in_flow's
-    search depth) right after the module with id == after_module_id, or
-    append at the end if after_module_id is None/not found at top level."""
+    """Insert new_node right after the module with id == after_module_id,
+    searching the top-level flow AND recursively inside every router
+    branch (routes[].flow) -- same reach as _find_module_in_flow, so a
+    module can be added right after any existing module regardless of
+    which branch it lives in. Appends to the top-level flow if
+    after_module_id is None or not found anywhere."""
     if after_module_id is None:
         flow.append(new_node)
         return True
-    for i, node in enumerate(flow):
-        if int(node.get("id") or -1) == after_module_id:
-            flow.insert(i + 1, new_node)
-            return True
+
+    def try_insert(nodes: list) -> bool:
+        for i, node in enumerate(nodes):
+            if int(node.get("id") or -1) == after_module_id:
+                nodes.insert(i + 1, new_node)
+                return True
+            for route in (node.get("routes") or []):
+                route_flow = route.setdefault("flow", [])
+                if try_insert(route_flow):
+                    return True
+        return False
+
+    if try_insert(flow):
+        return True
     flow.append(new_node)
     return True
+
+
+def _remove_module_from_flow(flow: list, module_id: int) -> bool:
+    """Remove the module with this id from wherever it lives -- the
+    top-level flow or inside any router branch -- mutating in place.
+    Returns True if a module was actually removed."""
+    for i, node in enumerate(flow):
+        if int(node.get("id") or -1) == module_id:
+            del flow[i]
+            return True
+        for route in (node.get("routes") or []):
+            route_flow = route.get("flow") or []
+            if _remove_module_from_flow(route_flow, module_id):
+                return True
+    return False
 
 
 def _next_module_id(flow: list) -> int:
@@ -1702,8 +1730,7 @@ async def preview_delete_blueprint_module(ctx, params: PreviewDeleteBlueprintMod
     target = _find_module_in_flow(flow, params.module_id)
     if target is None:
         return ActionResult.error(
-            f"No module with id {params.module_id} found in this scenario's flow (router "
-            "sub-branch deletion is not supported yet -- only top-level modules).",
+            f"No module with id {params.module_id} found in this scenario's flow.",
             code="MAKE_MODULE_NOT_FOUND",
         )
     before = len(_flatten_blueprint_modules(flow))
@@ -1749,13 +1776,11 @@ async def apply_delete_blueprint_module(ctx, params: ApplyDeleteBlueprintModuleP
             code="MAKE_BLUEPRINT_STATE_MISMATCH",
         )
     flow = blueprint.get("flow") or []
-    if not any(int(n.get("id") or -1) == params.module_id for n in flow):
+    if not _remove_module_from_flow(flow, params.module_id):
         return ActionResult.error(
-            f"No top-level module with id {params.module_id} found (it may be inside a "
-            "router branch, which isn't supported yet, or already removed).",
+            f"No module with id {params.module_id} found (it may already be removed).",
             code="MAKE_MODULE_NOT_FOUND",
         )
-    flow = [n for n in flow if int(n.get("id") or -1) != params.module_id]
     blueprint["flow"] = flow
     try:
         await mc.update_scenario(ctx, token, zone, params.scenario_id, blueprint=blueprint)
@@ -1918,4 +1943,42 @@ async def delete_api_token(ctx, params: DeleteApiTokenParams) -> ActionResult:
     return ActionResult.success(
         DeleteResult(deleted=True, id=str(params.token_id)),
         summary=f"API token {params.token_id} deleted.",
+    )
+
+
+@chat.function(
+    "create_hook",
+    "Create a new incoming webhook/mailhook (Make 'hook') in a team -- a "
+    "fresh trigger point a scenario can listen on. For a generic HTTP "
+    "webhook, type_name='gateway-webhook' works without a connection_id; "
+    "app-specific hook types may need one -- check an existing similar "
+    "hook via list_hooks first when unsure.",
+    action_type="write",
+    chain_callable=True,
+    data_model=MakeHook,
+    event="make-com-connector.create_hook",
+    effects=["make.hook.created"],
+)
+async def create_hook(ctx, params: CreateHookParams) -> ActionResult:
+    token, zone = await _get_credentials(ctx)
+    if not token or not zone:
+        return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
+    try:
+        raw = await mc.create_hook(
+            ctx, token, zone,
+            name=params.name, team_id=params.team_id, type_name=params.type_name,
+            include_method=params.include_method, include_headers=params.include_headers,
+            stringify=params.stringify, connection_id=params.connection_id, form_id=params.form_id,
+        )
+    except mc.ProviderError as exc:
+        return ActionResult.error(str(exc), code=exc.code)
+    result = MakeHook(
+        id=str(raw.get("id", "")), title=raw.get("name", params.name),
+        hook_id=int(raw.get("id") or 0), type_name=raw.get("typeName", params.type_name),
+        url=raw.get("url", ""), enabled=bool(raw.get("enabled", True)),
+        scenario_id=raw.get("scenarioId"), queue_count=int(raw.get("queueCount") or 0),
+    )
+    return ActionResult.success(
+        result, summary=f"Hook '{params.name}' created (id {result.hook_id}).",
+        refresh_panels=["make_connect"],
     )

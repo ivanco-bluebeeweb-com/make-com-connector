@@ -315,6 +315,17 @@ class DeleteHookParams(BaseModel):
                            "stop working once it's deleted.")
 
 
+class CreateHookParams(BaseModel):
+    name: str = Field(..., description="Display name for the new hook.")
+    team_id: int = Field(..., description="Make team id (see list_make_teams).")
+    type_name: str = Field(..., description="Hook type, e.g. 'gateway-webhook' for a generic incoming webhook, or an app-specific hook type. Check an existing similar hook's type_name via list_hooks first when unsure.")
+    include_method: bool = Field(False, description="True to also capture the HTTP method of incoming requests.")
+    include_headers: bool = Field(False, description="True to also capture HTTP headers of incoming requests.")
+    stringify: bool = Field(False, description="True to pass the raw body as a string instead of parsed JSON.")
+    connection_id: int | None = Field(None, description="Optional connection id, required by some app-specific hook types (not needed for a generic gateway-webhook).")
+    form_id: str | None = Field(None, description="Optional form id, only used by form-based hook types.")
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Срез 10: incomplete executions (DLQ) -- failed scenario runs held for
 # manual resolution/retry.
