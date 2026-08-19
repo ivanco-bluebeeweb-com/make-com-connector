@@ -129,6 +129,8 @@ class SetOutgoingWebhookParams(BaseModel):
 
 
 class OutgoingWebhookStatus(sdl.Entity):
+    id: str = ""
+    title: str = ""
     configured: bool = False
     detail: str = ""
 
@@ -142,6 +144,8 @@ class SendWebhookEventParams(BaseModel):
 
 
 class WebhookDeliveryResult(sdl.Entity):
+    id: str = ""
+    title: str = ""
     delivered: bool = False
     status_code: int = 0
     detail: str = ""
@@ -227,11 +231,14 @@ class VerifyConnectionParams(BaseModel):
 
 
 class ConnectionVerifyResult(sdl.Entity):
+    id: str = ""
+    title: str = ""
     connection_id: int = 0
     verified: bool = False
 
 
 class DeleteResult(sdl.Entity):
+    title: str = ""
     id: str = ""
     deleted: bool = False
 
@@ -356,6 +363,8 @@ class DeleteIncompleteExecutionsParams(BaseModel):
 
 
 class BulkDeleteResult(sdl.Entity):
+    id: str = ""
+    title: str = ""
     deleted_count: int = 0
     ids: list[str] = Field(default_factory=list)
     failed: list[dict] = Field(default_factory=list)
@@ -376,6 +385,8 @@ class BulkSetScenarioActiveParams(BaseModel):
 
 
 class BulkScenarioStateResult(sdl.Entity):
+    id: str = ""
+    title: str = ""
     succeeded: list[int] = Field(default_factory=list)
     failed: dict[str, str] = Field(default_factory=dict)
     active: bool = False
@@ -388,6 +399,8 @@ class BulkRunScenariosParams(BaseModel):
 
 
 class BulkRunResult(sdl.Entity):
+    id: str = ""
+    title: str = ""
     succeeded: dict[str, str] = Field(default_factory=dict)
     failed: dict[str, str] = Field(default_factory=dict)
 
@@ -420,6 +433,8 @@ class PreviewUpdateBlueprintModuleParams(BaseModel):
 
 
 class BlueprintModuleFieldPreview(sdl.Entity):
+    id: str = ""
+    title: str = ""
     scenario_id: int = 0
     module_id: int = 0
     field: str = ""
@@ -440,6 +455,8 @@ class ApplyUpdateBlueprintModuleParams(BaseModel):
 
 
 class BlueprintModuleUpdateResult(sdl.Entity):
+    id: str = ""
+    title: str = ""
     scenario_id: int = 0
     module_id: int = 0
     field: str = ""
@@ -480,6 +497,8 @@ class UpdateSchedulingParams(BaseModel):
 
 
 class SchedulingResult(sdl.Entity):
+    id: str = ""
+    title: str = ""
     scenario_id: int = 0
     scheduling_type: str = ""
     interval: int = 0
@@ -490,6 +509,8 @@ class ListBuildtimeVariablesParams(BaseModel):
 
 
 class BuildtimeVariable(sdl.Entity):
+    id: str = ""
+    title: str = ""
     name: str = ""
     value: str = ""
 
@@ -515,6 +536,8 @@ class GetScenarioUsageParams(BaseModel):
 
 
 class UsageDay(sdl.Entity):
+    id: str = ""
+    title: str = ""
     date: str = ""
     operations: int = 0
     data_transfer: int = 0
@@ -593,6 +616,8 @@ class PreviewAddBlueprintModuleParams(BaseModel):
 
 
 class BlueprintModuleAddPreview(sdl.Entity):
+    id: str = ""
+    title: str = ""
     scenario_id: int = 0
     app_module: str = ""
     position_after: int = 0
@@ -610,6 +635,8 @@ class ApplyAddBlueprintModuleParams(BaseModel):
 
 
 class BlueprintModuleAddResult(sdl.Entity):
+    id: str = ""
+    title: str = ""
     scenario_id: int = 0
     new_module_id: int = 0
     total_modules: int = 0
@@ -622,6 +649,8 @@ class PreviewDeleteBlueprintModuleParams(BaseModel):
 
 
 class BlueprintModuleDeletePreview(sdl.Entity):
+    id: str = ""
+    title: str = ""
     scenario_id: int = 0
     module_id: int = 0
     module_title: str = ""
@@ -637,6 +666,8 @@ class ApplyDeleteBlueprintModuleParams(BaseModel):
 
 
 class BlueprintModuleDeleteResult(sdl.Entity):
+    id: str = ""
+    title: str = ""
     scenario_id: int = 0
     deleted_module_id: int = 0
     total_modules: int = 0

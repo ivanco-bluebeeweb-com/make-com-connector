@@ -5,6 +5,40 @@
 
 ---
 
+## 2026-08-19 — Plausible Scenario Testing (PST), первый прогон — системный баг: 16 моделей / 24 места вызова, не пойман статическим пост-аудитом ниже
+
+**Что проверялось:** реальное поведение кода через `imperal_sdk.testing.MockContext`
++ `MockSecretStore` — фактическое исполнение `handlers.py`/`make_client.py`
+по 17 сценариям вдоль 5 обязательных веток (happy/error/blocked/recovery/
+adversarial). Полный журнал и метод — в `SCENARIO_TESTS.md` этого приложения.
+
+**Находка (исправлена):** 16 субклассов `sdl.Entity` в `schemas.py`
+(`OutgoingWebhookStatus`, `WebhookDeliveryResult`, `ConnectionVerifyResult`,
+`DeleteResult`, `BulkDeleteResult`, `BulkScenarioStateResult`,
+`BulkRunResult`, `BlueprintModuleFieldPreview`, `BlueprintModuleUpdateResult`,
+`SchedulingResult`, `BuildtimeVariable`, `UsageDay`,
+`BlueprintModuleAddPreview`, `BlueprintModuleAddResult`,
+`BlueprintModuleDeletePreview`, `BlueprintModuleDeleteResult`) не
+переобъявляли дефолты для обязательных полей `id`/`title`, унаследованных
+от `imperal_sdk.sdl.Entity`. Все 24 места их конструирования в
+`handlers.py` не передают `id=`/`title=` (это статусы/отчёты/превью, не
+сущности с естественным ID) → гарантированный `pydantic_core.ValidationError`
+на первом же реальном вызове каждой из затронутых функций (вебхуки,
+верификация соединений, все delete/bulk_delete, bulk_set_scenario_active,
+bulk_run_scenarios, blueprint preview/apply, scheduling, buildtime
+variables, usage report). Найдено систематическим AST-сравнением всех
+субклассов `sdl.Entity` против их реальных конструкторов в `handlers.py`
+после того, как 4 из 17 тестов упали с одинаковой ошибкой — расширение
+проверки с этих 4 до всех 16 предотвратило 12 латентных крашей, которые
+иначе всплыли бы только при первом реальном использовании конкретной
+функции пользователем.
+
+**Фикс:** добавлены `id: str = ""` / `title: str = ""` во все 16 классов.
+Все 24 теста зелёные. Приложение передеплоено — это уже прайсированный
+код, 16 из 53 функций фактически не работали до этого прогона.
+
+---
+
 ## 2026-08-19 — Сквозной пост-аудит + системное исправление confirm-антипаттерна
 
 **Что проверялось:** py_compile всех модулей; полное соответствие
