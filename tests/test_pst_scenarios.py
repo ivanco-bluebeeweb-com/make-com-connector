@@ -335,3 +335,60 @@ async def test_send_webhook_event_network_failure_not_raised_as_exception(ctx):
     result = await h.send_webhook_event(ctx, SendWebhookEventParams(payload={"event": "test"}))
     assert result.error is not None
     assert result.error_code == "MAKE_WEBHOOK_DELIVERY_FAILED"
+
+
+# ── Part D2 (SCENARIO_TESTING_STANDARD.md): idempotency / double-invocation ─
+
+@pytest.mark.asyncio
+async def test_d2_delete_connection_twice_second_call_is_not_found(ctx_connected):
+    """Same double-click class as test_delete_hook_twice_second_call_is_not_found:
+    delete the same connection twice -- first succeeds, second must report a
+    real not-found/HTTP error, never silently repeat deleted=true."""
+    ctx_connected.http._mocks.append(("DELETE", "/api/v2/connections/42", {"connection": 42}, 200, {}))
+    r1 = await h.delete_connection(ctx_connected, DeleteConnectionParams(connection_id=42))
+    assert r1.error is None
+    assert r1.data.deleted is True
+
+    ctx_connected.http._mocks.clear()
+    ctx_connected.http._mocks.append(("DELETE", "/api/v2/connections/42", {"detail": "connection not found"}, 404, {}))
+    r2 = await h.delete_connection(ctx_connected, DeleteConnectionParams(connection_id=42))
+    assert r2.error is not None
+    assert r2.error_code == "MAKE_HTTP_ERROR"
+
+
+@pytest.mark.asyncio
+async def test_d2_delete_data_store_twice_second_call_is_not_found(ctx_connected):
+    """Same double-click class -- delete the same data store twice."""
+    ctx_connected.http._mocks.append(("DELETE", "/api/v2/data-stores/9", {"dataStore": 9}, 200, {}))
+    r1 = await h.delete_data_store(ctx_connected, DeleteDataStoreParams(data_store_id=9))
+    assert r1.error is None
+    assert r1.data.deleted is True
+
+    ctx_connected.http._mocks.clear()
+    ctx_connected.http._mocks.append(("DELETE", "/api/v2/data-stores/9", {"detail": "data store not found"}, 404, {}))
+    r2 = await h.delete_data_store(ctx_connected, DeleteDataStoreParams(data_store_id=9))
+    assert r2.error is not None
+    assert r2.error_code == "MAKE_HTTP_ERROR"
+
+
+# ── Part D3 (SCENARIO_TESTING_STANDARD.md): security / SSRF surface -------
+
+@pytest.mark.asyncio
+async def test_d3_outgoing_webhook_is_reviewed_intentional_ssrf_surface(ctx):
+    """Unlike every other connector in this portfolio, Make.com Connector
+    DOES let a user configure an arbitrary outgoing URL (set_outgoing_webhook)
+    that this app's own code later POSTs to (send_webhook_event ->
+    mc.post_webhook). This is reviewed and accepted as intentional, not a
+    bug: it is the documented mechanism for other Imperal apps/automations
+    to trigger a Make scenario via a Custom Webhook trigger, exactly like
+    Slack/Discord-style outgoing webhooks. Safeguards already in place:
+    (1) explicit opt-in -- nothing is sent until the user runs
+    set_outgoing_webhook themselves; (2) scheme validation rejects anything
+    that doesn't start with http(s)://; (3) network failures are caught and
+    reported, never raised as an unhandled exception (see
+    test_send_webhook_event_network_failure_not_raised_as_exception).
+    This test is the regression trip-wire: if scheme validation is ever
+    weakened, this must be revisited alongside a real SSRF fix."""
+    result = await h.set_outgoing_webhook(ctx, SetOutgoingWebhookParams(webhook_url="not-a-url"))
+    assert result.error is not None
+    assert result.error_code == "MAKE_WEBHOOK_URL_INVALID"
