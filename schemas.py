@@ -85,10 +85,6 @@ class MakeScenarioList(sdl.EntityList[MakeScenario]):
 
 class RunScenarioParams(BaseModel):
     scenario_id: int = Field(..., description="Make scenario id to run now (see list_scenarios).")
-    confirm: bool = Field(
-        False, description="Must be true. Running a scenario executes its real "
-                           "actions in Make right now (sending emails, writing to "
-                           "connected apps, etc.) -- there is no dry-run or undo.")
 
 
 class ScenarioRunResult(sdl.Entity):
@@ -219,9 +215,6 @@ class MakeConnectionList(sdl.EntityList[MakeConnection]):
 
 class DeleteConnectionParams(BaseModel):
     connection_id: int = Field(..., description="Connection id (see list_connections).")
-    confirm: bool = Field(
-        False, description="Must be true. Any scenario using this connection "
-                           "will stop working once it's deleted.")
 
 
 class RenameConnectionParams(BaseModel):
@@ -275,7 +268,6 @@ class CreateDataStoreParams(BaseModel):
 
 class DeleteDataStoreParams(BaseModel):
     data_store_id: int = Field(..., description="Data store id (see list_data_stores).")
-    confirm: bool = Field(False, description="Must be true. This permanently deletes all its records.")
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -310,9 +302,6 @@ class SetHookEnabledParams(BaseModel):
 
 class DeleteHookParams(BaseModel):
     hook_id: int = Field(..., description="Hook id (see list_hooks).")
-    confirm: bool = Field(
-        False, description="Must be true. Any scenario using this hook will "
-                           "stop working once it's deleted.")
 
 
 class CreateHookParams(BaseModel):
@@ -364,7 +353,6 @@ class DeleteIncompleteExecutionsParams(BaseModel):
         default_factory=list, description="Explicit incomplete execution ids to "
                                           "delete. Omit and set all=true to delete every one.")
     all: bool = Field(False, description="Delete every incomplete execution of this scenario.")
-    confirm: bool = Field(False, description="Must be true when all=true.")
 
 
 class BulkDeleteResult(sdl.Entity):
@@ -397,9 +385,6 @@ class BulkRunScenariosParams(BaseModel):
     scenario_ids: list[int] = Field(
         ..., min_length=1, max_length=100,
         description="Explicit Make scenario ids; 1-100, never inferred.")
-    confirm: bool = Field(
-        False, description="Must be true. Runs every listed scenario's real "
-                           "actions right now, with no dry-run or undo.")
 
 
 class BulkRunResult(sdl.Entity):
@@ -411,14 +396,12 @@ class BulkDeleteConnectionsParams(BaseModel):
     connection_ids: list[int] = Field(
         ..., min_length=1, max_length=100,
         description="Explicit connection ids; 1-100, never inferred.")
-    confirm: bool = Field(False, description="Must be true. Scenarios using these connections will stop working.")
 
 
 class BulkDeleteHooksParams(BaseModel):
     hook_ids: list[int] = Field(
         ..., min_length=1, max_length=100,
         description="Explicit hook ids; 1-100, never inferred.")
-    confirm: bool = Field(False, description="Must be true. Scenarios using these hooks will stop working.")
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -729,7 +712,6 @@ class MakeApiTokenList(sdl.EntityList[MakeApiToken]):
 class CreateApiTokenParams(BaseModel):
     label: str = Field(..., description="Label shown in the Make user profile for this token.")
     scope: list[str] = Field(..., min_length=1, description="Make API scopes to grant, e.g. ['scenarios:read','scenarios:write']. Full list via Make's own /enums/user-api-tokes-scopes.")
-    confirm: bool = Field(False, description="Must be true. This creates a real, usable Make credential -- treat it like any other secret.")
 
 
 class CreatedApiToken(sdl.Entity):
@@ -746,4 +728,3 @@ class CreatedApiToken(sdl.Entity):
 
 class DeleteApiTokenParams(BaseModel):
     created_timestamp: str = Field(..., description="The token's own 'created' timestamp from list_api_tokens (ISO 8601) -- Make identifies tokens by creation time, not a separate id.")
-    confirm: bool = Field(False, description="Must be true. Anything using this token stops working immediately.")

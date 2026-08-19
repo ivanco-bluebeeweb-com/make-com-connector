@@ -304,26 +304,20 @@ async def list_scenarios(ctx, params: ListScenariosParams) -> ActionResult:
     "list_scenarios). This executes the scenario's real actions in Make "
     "immediately -- sending emails, writing to connected apps, etc. There "
     "is no dry-run or undo, so this always asks for confirm=true first.",
-    action_type="write",
+    action_type="destructive",
     chain_callable=True,
     data_model=ScenarioRunResult,
     event="make-com-connector.run_scenario",
     effects=["make.scenario.run"],
 )
 async def run_scenario(ctx, params: RunScenarioParams) -> ActionResult:
-    """Gated on an explicit `confirm`, same pattern as Trello's delete_board:
-    a scenario run is a real action in a real external system (Make), with
-    whatever side effects that scenario is built to have -- there is no way
-    for this connector to know if those are reversible, so it never assumes
-    they are."""
-    if not params.confirm:
-        return ActionResult.error(
-            "Running a Make scenario executes its real actions right now "
-            "(sending emails, writing to connected apps, etc.) with no "
-            "dry-run or undo. Pass confirm=true if that is really the intent.",
-            code="MAKE_CONFIRM_REQUIRED",
-        )
-
+    """Declared `action_type="destructive"` per Imperal's action-type doctrine:
+    a scenario run is a real, irreversible action in a real external system
+    (Make), with whatever side effects that scenario is built to have -- there
+    is no way for this connector to know if those are reversible, so it never
+    assumes they are. The web-kernel's KAV confirmation card handles asking the
+    user before dispatch; this handler must NOT re-prompt (double-prompting
+    breaks the platform's "what you saw is what runs" guarantee)."""
     token, zone = await _get_credentials(ctx)
     if not (token and zone):
         return ActionResult.error(
@@ -619,16 +613,11 @@ async def list_connections(ctx, params: ListConnectionsParams) -> ActionResult:
     "delete_connection",
     "Permanently delete a Make connection. Any scenario using it will "
     "stop working once it's gone.",
-    action_type="write",
+    action_type="destructive",
     chain_callable=True,
     data_model=DeleteResult,
 )
 async def delete_connection(ctx, params: DeleteConnectionParams) -> ActionResult:
-    if not params.confirm:
-        return ActionResult.error(
-            "Set confirm=true to delete this connection -- scenarios using it will break.",
-            code="MAKE_CONFIRM_REQUIRED",
-        )
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -754,16 +743,11 @@ async def create_data_store(ctx, params: CreateDataStoreParams) -> ActionResult:
 @chat.function(
     "delete_data_store",
     "Permanently delete a Make data store and all of its records.",
-    action_type="write",
+    action_type="destructive",
     chain_callable=True,
     data_model=DeleteResult,
 )
 async def delete_data_store(ctx, params: DeleteDataStoreParams) -> ActionResult:
-    if not params.confirm:
-        return ActionResult.error(
-            "Set confirm=true to delete this data store -- all its records will be lost.",
-            code="MAKE_CONFIRM_REQUIRED",
-        )
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -842,16 +826,11 @@ async def set_hook_enabled(ctx, params: SetHookEnabledParams) -> ActionResult:
     "delete_hook",
     "Permanently remove a Make hook. Any scenario using it will stop "
     "working once it's gone.",
-    action_type="write",
+    action_type="destructive",
     chain_callable=True,
     data_model=DeleteResult,
 )
 async def delete_hook(ctx, params: DeleteHookParams) -> ActionResult:
-    if not params.confirm:
-        return ActionResult.error(
-            "Set confirm=true to delete this hook -- scenarios using it will break.",
-            code="MAKE_CONFIRM_REQUIRED",
-        )
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -923,20 +902,15 @@ async def retry_incomplete_execution(ctx, params: RetryIncompleteExecutionParams
 @chat.function(
     "delete_incomplete_executions",
     "Permanently delete one scenario's incomplete executions -- explicit "
-    "ids, or all=true with confirm=true to clear every one.",
-    action_type="write",
+    "ids, or all=true to clear every one.",
+    action_type="destructive",
     chain_callable=True,
     data_model=BulkDeleteResult,
 )
 async def delete_incomplete_executions(ctx, params: DeleteIncompleteExecutionsParams) -> ActionResult:
-    if params.all and not params.confirm:
-        return ActionResult.error(
-            "Set confirm=true to delete ALL incomplete executions for this scenario.",
-            code="MAKE_CONFIRM_REQUIRED",
-        )
     if not params.all and not params.dlq_ids:
         return ActionResult.error(
-            "Pass explicit dlq_ids, or all=true with confirm=true.",
+            "Pass explicit dlq_ids, or all=true to delete every incomplete execution.",
             code="MAKE_MISSING_IDS",
         )
     token, zone = await _get_credentials(ctx)
@@ -945,7 +919,7 @@ async def delete_incomplete_executions(ctx, params: DeleteIncompleteExecutionsPa
     try:
         deleted = await mc.delete_incomplete_executions(
             ctx, token, zone, params.scenario_id,
-            ids=params.dlq_ids or None, all_=params.all, confirmed=params.confirm,
+            ids=params.dlq_ids or None, all_=params.all, confirmed=True,
         )
     except mc.ProviderError as exc:
         return ActionResult.error(str(exc), code=exc.code)
@@ -1000,22 +974,14 @@ async def bulk_set_scenario_active(ctx, params: BulkSetScenarioActiveParams) -> 
 @chat.function(
     "bulk_run_scenarios",
     "Run SEVERAL Make scenarios right now, by explicit scenario ids. "
-    "Executes real actions in each scenario immediately -- no dry-run, "
-    "always requires confirm=true.",
-    action_type="write",
+    "Executes real actions in each scenario immediately -- no dry-run.",
+    action_type="destructive",
     chain_callable=True,
     data_model=BulkRunResult,
     event="make-com-connector.bulk_run_scenarios",
     effects=["make.scenario.bulk_run"],
 )
 async def bulk_run_scenarios(ctx, params: BulkRunScenariosParams) -> ActionResult:
-    if not params.confirm:
-        return ActionResult.error(
-            "Running scenarios executes their real actions right now, for "
-            "every listed id, with no dry-run or undo. Pass confirm=true "
-            "if that is really the intent.",
-            code="MAKE_CONFIRM_REQUIRED",
-        )
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1044,16 +1010,11 @@ async def bulk_run_scenarios(ctx, params: BulkRunScenariosParams) -> ActionResul
     "Permanently delete SEVERAL Make connections at once, by explicit "
     "connection ids. Any scenario using one will stop working once it's "
     "gone.",
-    action_type="write",
+    action_type="destructive",
     chain_callable=True,
     data_model=BulkDeleteResult,
 )
 async def bulk_delete_connections(ctx, params: BulkDeleteConnectionsParams) -> ActionResult:
-    if not params.confirm:
-        return ActionResult.error(
-            "Set confirm=true to delete these connections -- scenarios using them will break.",
-            code="MAKE_CONFIRM_REQUIRED",
-        )
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1075,16 +1036,11 @@ async def bulk_delete_connections(ctx, params: BulkDeleteConnectionsParams) -> A
     "bulk_delete_hooks",
     "Permanently remove SEVERAL Make hooks at once, by explicit hook "
     "ids. Any scenario using one will stop working once it's gone.",
-    action_type="write",
+    action_type="destructive",
     chain_callable=True,
     data_model=BulkDeleteResult,
 )
 async def bulk_delete_hooks(ctx, params: BulkDeleteHooksParams) -> ActionResult:
-    if not params.confirm:
-        return ActionResult.error(
-            "Set confirm=true to delete these hooks -- scenarios using them will break.",
-            code="MAKE_CONFIRM_REQUIRED",
-        )
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1904,12 +1860,6 @@ async def list_api_tokens(ctx, params: ListApiTokensParams) -> ActionResult:
     effects=["make.api_token.created"],
 )
 async def create_api_token(ctx, params: CreateApiTokenParams) -> ActionResult:
-    if not params.confirm:
-        return ActionResult.error(
-            "This creates a real, usable Make API credential. Pass "
-            "confirm=true if that is really the intent.",
-            code="MAKE_CONFIRM_REQUIRED",
-        )
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1933,19 +1883,13 @@ async def create_api_token(ctx, params: CreateApiTokenParams) -> ActionResult:
     "Permanently delete one of the connected user's own Make API tokens. "
     "Anything using it (external scripts, other integrations) stops "
     "working immediately.",
-    action_type="write",
+    action_type="destructive",
     chain_callable=True,
     data_model=DeleteResult,
     event="make-com-connector.delete_api_token",
     effects=["make.api_token.deleted"],
 )
 async def delete_api_token(ctx, params: DeleteApiTokenParams) -> ActionResult:
-    if not params.confirm:
-        return ActionResult.error(
-            "Set confirm=true to delete this token -- anything using it "
-            "will stop working immediately.",
-            code="MAKE_CONFIRM_REQUIRED",
-        )
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")

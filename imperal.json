@@ -774,7 +774,7 @@
     {
       "name": "run_scenario",
       "description": "Run one of your Make.com scenarios right now, by scenario_id (see list_scenarios). This executes the scenario's real actions in Make immediately -- sending emails, writing to connected apps, etc. There is no dry-run or undo, so this always asks for confirm=true first.",
-      "action_type": "write",
+      "action_type": "destructive",
       "chain_callable": true,
       "effects": [
         "make.scenario.run"
@@ -786,12 +786,6 @@
             "description": "Make scenario id to run now (see list_scenarios).",
             "title": "Scenario Id",
             "type": "integer"
-          },
-          "confirm": {
-            "default": false,
-            "description": "Must be true. Running a scenario executes its real actions in Make right now (sending emails, writing to connected apps, etc.) -- there is no dry-run or undo.",
-            "title": "Confirm",
-            "type": "boolean"
           }
         },
         "required": [
@@ -1712,7 +1706,7 @@
     {
       "name": "delete_connection",
       "description": "Permanently delete a Make connection. Any scenario using it will stop working once it's gone.",
-      "action_type": "write",
+      "action_type": "destructive",
       "chain_callable": true,
       "effects": [],
       "id_projection": "",
@@ -1722,12 +1716,6 @@
             "description": "Connection id (see list_connections).",
             "title": "Connection Id",
             "type": "integer"
-          },
-          "confirm": {
-            "default": false,
-            "description": "Must be true. Any scenario using this connection will stop working once it's deleted.",
-            "title": "Confirm",
-            "type": "boolean"
           }
         },
         "required": [
@@ -2359,7 +2347,7 @@
     {
       "name": "delete_data_store",
       "description": "Permanently delete a Make data store and all of its records.",
-      "action_type": "write",
+      "action_type": "destructive",
       "chain_callable": true,
       "effects": [],
       "id_projection": "",
@@ -2369,12 +2357,6 @@
             "description": "Data store id (see list_data_stores).",
             "title": "Data Store Id",
             "type": "integer"
-          },
-          "confirm": {
-            "default": false,
-            "description": "Must be true. This permanently deletes all its records.",
-            "title": "Confirm",
-            "type": "boolean"
           }
         },
         "required": [
@@ -2758,7 +2740,7 @@
     {
       "name": "delete_hook",
       "description": "Permanently remove a Make hook. Any scenario using it will stop working once it's gone.",
-      "action_type": "write",
+      "action_type": "destructive",
       "chain_callable": true,
       "effects": [],
       "id_projection": "",
@@ -2768,12 +2750,6 @@
             "description": "Hook id (see list_hooks).",
             "title": "Hook Id",
             "type": "integer"
-          },
-          "confirm": {
-            "default": false,
-            "description": "Must be true. Any scenario using this hook will stop working once it's deleted.",
-            "title": "Confirm",
-            "type": "boolean"
           }
         },
         "required": [
@@ -3183,7 +3159,7 @@
     {
       "name": "delete_incomplete_executions",
       "description": "Permanently delete one scenario's incomplete executions -- explicit ids, or all=true with confirm=true to clear every one.",
-      "action_type": "write",
+      "action_type": "destructive",
       "chain_callable": true,
       "effects": [],
       "id_projection": "",
@@ -3206,12 +3182,6 @@
             "default": false,
             "description": "Delete every incomplete execution of this scenario.",
             "title": "All",
-            "type": "boolean"
-          },
-          "confirm": {
-            "default": false,
-            "description": "Must be true when all=true.",
-            "title": "Confirm",
             "type": "boolean"
           }
         },
@@ -3467,7 +3437,7 @@
     {
       "name": "bulk_run_scenarios",
       "description": "Run SEVERAL Make scenarios right now, by explicit scenario ids. Executes real actions in each scenario immediately -- no dry-run, always requires confirm=true.",
-      "action_type": "write",
+      "action_type": "destructive",
       "chain_callable": true,
       "effects": [
         "make.scenario.bulk_run"
@@ -3484,12 +3454,6 @@
             "minItems": 1,
             "title": "Scenario Ids",
             "type": "array"
-          },
-          "confirm": {
-            "default": false,
-            "description": "Must be true. Runs every listed scenario's real actions right now, with no dry-run or undo.",
-            "title": "Confirm",
-            "type": "boolean"
           }
         },
         "required": [
@@ -3600,7 +3564,7 @@
     {
       "name": "bulk_delete_connections",
       "description": "Permanently delete SEVERAL Make connections at once, by explicit connection ids. Any scenario using one will stop working once it's gone.",
-      "action_type": "write",
+      "action_type": "destructive",
       "chain_callable": true,
       "effects": [],
       "id_projection": "",
@@ -3615,12 +3579,6 @@
             "minItems": 1,
             "title": "Connection Ids",
             "type": "array"
-          },
-          "confirm": {
-            "default": false,
-            "description": "Must be true. Scenarios using these connections will stop working.",
-            "title": "Confirm",
-            "type": "boolean"
           }
         },
         "required": [
@@ -3737,7 +3695,7 @@
     {
       "name": "bulk_delete_hooks",
       "description": "Permanently remove SEVERAL Make hooks at once, by explicit hook ids. Any scenario using one will stop working once it's gone.",
-      "action_type": "write",
+      "action_type": "destructive",
       "chain_callable": true,
       "effects": [],
       "id_projection": "",
@@ -3752,12 +3710,6 @@
             "minItems": 1,
             "title": "Hook Ids",
             "type": "array"
-          },
-          "confirm": {
-            "default": false,
-            "description": "Must be true. Scenarios using these hooks will stop working.",
-            "title": "Confirm",
-            "type": "boolean"
           }
         },
         "required": [
@@ -7078,12 +7030,6 @@
             "minItems": 1,
             "title": "Scope",
             "type": "array"
-          },
-          "confirm": {
-            "default": false,
-            "description": "Must be true. This creates a real, usable Make credential -- treat it like any other secret.",
-            "title": "Confirm",
-            "type": "boolean"
           }
         },
         "required": [
@@ -7194,7 +7140,7 @@
     {
       "name": "delete_api_token",
       "description": "Permanently delete one of the connected user's own Make API tokens. Anything using it (external scripts, other integrations) stops working immediately.",
-      "action_type": "write",
+      "action_type": "destructive",
       "chain_callable": true,
       "params_schema": {
         "properties": {
@@ -7202,12 +7148,6 @@
             "description": "The token's own 'created' timestamp from list_api_tokens (ISO 8601) -- Make identifies tokens by creation time, not a separate id.",
             "title": "Created Timestamp",
             "type": "string"
-          },
-          "confirm": {
-            "default": false,
-            "description": "Must be true. Anything using this token stops working immediately.",
-            "title": "Confirm",
-            "type": "boolean"
           }
         },
         "required": [
