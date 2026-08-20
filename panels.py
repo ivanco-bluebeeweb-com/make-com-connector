@@ -39,8 +39,9 @@ def _connected_section(detail: str) -> ui.UINode:
 
 
 def _connect_section() -> ui.UINode:
-    """Plain content, no Card wrapper -- shown only while not connected."""
-    return ui.Stack(direction="v", gap=3, align="start", children=[
+    """Plain content, no Card wrapper -- shown only while not connected.
+    Stretched full-width per UI_INTERFACE_STANDARD.md (2026-08-20)."""
+    return ui.Stack(direction="v", gap=3, align="stretch", children=[
         ui.Text("Connect Make.com", variant="heading"),
         ui.Text(
             "Bring your own Make.com account. Paste your Make API token "
@@ -55,7 +56,8 @@ def _connect_section() -> ui.UINode:
             action="connect_make",
             submit_label="Verify and connect",
             children=[
-                ui.Password(param_name="api_token", placeholder="Make API token"),
+                ui.Password(param_name="api_token", label="API token",
+                             placeholder="Make API token"),
             ],
         ),
     ])
@@ -158,7 +160,7 @@ async def make_connect_panel(ctx, **kwargs) -> object:
                         subtitle="Run and monitor your Make scenarios from Imperal")
 
     if not connected:
-        return ui.Stack(direction="v", gap=4, align="start", children=[
+        return ui.Stack(direction="v", gap=4, align="stretch", children=[
             header,
             _connect_section(),
             ui.Alert(
@@ -206,7 +208,7 @@ async def make_connect_panel(ctx, **kwargs) -> object:
     children.append(_scenarios_section(scenarios))
     children.append(ui.Divider())
     children.append(_settings_button())
-    return ui.Stack(direction="v", gap=4, align="start", children=children)
+    return ui.Stack(direction="v", gap=4, align="stretch", children=children)
 
 
 @ext.panel("make_connect_help", slot="center", title="How to get a Make API token",

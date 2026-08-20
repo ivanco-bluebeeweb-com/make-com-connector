@@ -20,7 +20,7 @@ import handlers as h
 
 def _connection_section(zone: str, connected: bool) -> ui.UINode:
     if not connected:
-        return ui.Stack(direction="v", gap=2, children=[
+        return ui.Stack(direction="v", gap=2, align="stretch", children=[
             ui.Text("Connection", variant="heading"),
             ui.Text("Not connected.", variant="caption"),
             ui.Text(
@@ -33,7 +33,8 @@ def _connection_section(zone: str, connected: bool) -> ui.UINode:
                 action="connect_make",
                 submit_label="Verify and connect",
                 children=[
-                    ui.Password(param_name="api_token", placeholder="Make API token"),
+                    ui.Password(param_name="api_token", label="API token",
+                                 placeholder="Make API token"),
                 ],
             ),
         ])
@@ -57,12 +58,13 @@ def _webhook_section(configured: bool) -> ui.UINode:
                 on_click=ui.Call("set_outgoing_webhook", webhook_url=""),
             ),
         ])
-    return ui.Stack(direction="v", gap=2, children=[
+    return ui.Stack(direction="v", gap=2, align="stretch", children=[
         ui.Text("Outgoing webhook", variant="heading"),
         ui.Text("Send events from Imperal to a Make scenario.", variant="caption"),
         ui.Form(
             children=[
                 ui.Input(
+                    label="Webhook URL",
                     placeholder="Paste a Make Custom Webhook URL...",
                     param_name="webhook_url",
                 ),
@@ -80,7 +82,7 @@ async def make_settings_panel(ctx, **kwargs) -> object:
     connected = bool(token and zone)
     webhook_configured = bool(await ctx.secrets.get("make_webhook_url"))
 
-    content = ui.Stack(direction="v", gap=4, align="start", children=[
+    content = ui.Stack(direction="v", gap=4, align="stretch", children=[
         _connection_section(zone or "", connected),
         ui.Divider(),
         _webhook_section(webhook_configured),
