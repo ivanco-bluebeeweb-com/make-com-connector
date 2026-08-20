@@ -33,8 +33,10 @@ def _connection_section(zone: str, connected: bool) -> ui.UINode:
                 action="connect_make",
                 submit_label="Verify and connect",
                 children=[
-                    ui.Password(param_name="api_token", label="API token",
-                                 placeholder="Make API token"),
+                    ui.Stack(direction="v", gap=1, children=[
+                        ui.Text("API token", variant="caption"),
+                        ui.Password(param_name="api_token", placeholder="Make API token"),
+                    ]),
                 ],
             ),
         ])
@@ -63,11 +65,13 @@ def _webhook_section(configured: bool) -> ui.UINode:
         ui.Text("Send events from Imperal to a Make scenario.", variant="caption"),
         ui.Form(
             children=[
-                ui.Input(
-                    label="Webhook URL",
-                    placeholder="Paste a Make Custom Webhook URL...",
-                    param_name="webhook_url",
-                ),
+                ui.Stack(direction="v", gap=1, children=[
+                    ui.Text("Webhook URL", variant="caption"),
+                    ui.Input(
+                        placeholder="Paste a Make Custom Webhook URL...",
+                        param_name="webhook_url",
+                    ),
+                ]),
             ],
             submit_label="Save webhook",
             action="set_outgoing_webhook",

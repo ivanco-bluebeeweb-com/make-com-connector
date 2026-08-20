@@ -56,8 +56,10 @@ def _connect_section() -> ui.UINode:
             action="connect_make",
             submit_label="Verify and connect",
             children=[
-                ui.Password(param_name="api_token", label="API token",
-                             placeholder="Make API token"),
+                ui.Stack(direction="v", gap=1, children=[
+                    ui.Text("API token", variant="caption"),
+                    ui.Password(param_name="api_token", placeholder="Make API token"),
+                ]),
             ],
         ),
     ])
