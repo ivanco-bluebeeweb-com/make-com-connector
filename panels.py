@@ -116,7 +116,7 @@ def _scenario_item(s: dict) -> ui.UINode:
         actions=[
             {
                 "icon": "Play",
-                "on_click": ui.Call("run_scenario", scenario_id=scenario_id, confirm=True),
+                "on_click": ui.Call("run_scenario", scenario_id=scenario_id),
                 "confirm": (
                     "Run this scenario now? It executes its real actions in "
                     "Make immediately -- there is no dry-run or undo."
