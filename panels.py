@@ -1,37 +1,16 @@
 """Panel UI -- Срез 1 (connection) only.
 
-SKETCH (PREPARATION.md section 14), implemented:
-  ui.Stack (v, gap=4)
-    ui.Header
-    ui.Card (connect form OR connected status)
-      [not connected] ui.Stack (h) [ ui.Password, ui.Button("How do I get a token?") ]
-                       ui.Form(action=connect_make, submit_label="Verify and connect")
-      [connected]      ui.Text(detail) + ui.Button("Disconnect")
-  -- separate center_overlay dialog, opened by the help button --
-  @ext.panel("make_connect_help", slot="center", center_overlay=True)
-    ui.Dialog(title=..., content=ui.Stack(v, [ui.Text(step1..4), ui.Divider(), ui.Link(docs)]))
+SIDEBAR CONTENT -- NO CARDS ANYWHERE, updated 2026-08-20 per
+~/UI_INTERFACE_STANDARD.md's "left sidebar, no decorated cards" rule.
 
-PRE-PANEL CHECKLIST pass:
-  - ui.Password: no label=, no type=            OK
-  - ui.Card: content=, not children=            OK
-  - ui.Dialog on a center_overlay panel, opened via ui.Call("__panel__...")
-    (same proven pattern as yt_connect_dialog / wp_ssh_dialog)  OK
-  - ui.Form does not submit pre-set value= fields -- token is user-typed,
-    not pre-filled, so no hidden-context workaround needed        OK
-
-SIDEBAR CONTENT SECTIONS -- NOT wrapped in ui.Card.
-  Only the connect/connected block at the top is a genuine Card (it's a
-  single form/status widget, not a list). Every section below it that
-  lists several items of the same kind (team picker, scenarios, webhook
-  status) renders as a plain ui.Stack with a ui.Divider() between
-  sections -- no card padding/border/background per section. This is a
-  deliberate correction: rendering repeated list-like content as one
-  ui.Card per row/section produces visible box-in-a-box padding and no
-  separator, which reads as heavier and less scannable than a flat list
-  with dividers. See Docs/session-notes -- flagged as a platform gap:
-  the raw ListItem/List primitives don't give a left-sidebar "plain
-  divided sections" layout without reaching for Card, so Card gets
-  reached for out of habit even where a divider is what's wanted.
+Every section (connected status, team picker, scenarios) is a plain
+ui.Stack, content stacked vertically and left-aligned, sections separated
+by ui.Divider() -- no Card border/background/shadow anywhere in this
+slot. Disconnect and the outgoing-webhook config now live in the "App
+settings" screen (panels_settings.py) instead of inline in the sidebar --
+the sidebar only shows the connected summary line. The one secondary
+"App settings" button is always the LAST element at the bottom of the
+sidebar.
 """
 from __future__ import annotations
 
@@ -42,43 +21,44 @@ import handlers as h
 import make_client as mc
 
 
-def _connected_card(detail: str) -> ui.UINode:
-    return ui.Card(
-        title="Make.com",
-        subtitle="Connected",
-        content=ui.Stack(direction="v", gap=2, children=[
-            ui.Text(detail, variant="caption"),
-            ui.Button("Disconnect", variant="danger", size="sm",
-                      on_click=ui.Call("disconnect_make")),
-        ]),
+def _settings_button() -> ui.UINode:
+    """The one required secondary entry point into the settings screen --
+    always the last element at the bottom of the sidebar."""
+    return ui.Button(
+        "App settings", variant="secondary", size="sm", full_width=True,
+        icon="settings", on_click=ui.Call("__panel__make_settings"),
     )
 
 
-def _connect_card() -> ui.UINode:
-    return ui.Card(
-        title="Connect Make.com",
-        subtitle="Bring your own Make.com account",
-        content=ui.Stack(direction="v", gap=3, children=[
-            ui.Text(
-                "Paste your Make API token below. It's verified against "
-                "your account before saving, and your zone (eu1/eu2/us1/"
-                "us2) is detected automatically.",
-                variant="caption",
-            ),
-            ui.Stack(direction="h", gap=2, align="center", children=[
-                ui.Button("How do I get a token?", variant="ghost", size="sm",
-                          icon="HelpCircle",
-                          on_click=ui.Call("__panel__make_connect_help")),
-            ]),
-            ui.Form(
-                action="connect_make",
-                submit_label="Verify and connect",
-                children=[
-                    ui.Password(param_name="api_token", placeholder="Make API token"),
-                ],
-            ),
-        ]),
-    )
+def _connected_section(detail: str) -> ui.UINode:
+    """Plain content, no Card wrapper -- disconnect lives in App settings now."""
+    return ui.Stack(direction="v", gap=1, align="start", children=[
+        ui.Text("Make.com", variant="body"),
+        ui.Text(detail, variant="caption"),
+    ])
+
+
+def _connect_section() -> ui.UINode:
+    """Plain content, no Card wrapper -- shown only while not connected."""
+    return ui.Stack(direction="v", gap=3, align="start", children=[
+        ui.Text("Connect Make.com", variant="heading"),
+        ui.Text(
+            "Bring your own Make.com account. Paste your Make API token "
+            "below. It's verified against your account before saving, and "
+            "your zone (eu1/eu2/us1/us2) is detected automatically.",
+            variant="caption",
+        ),
+        ui.Button("How do I get a token?", variant="ghost", size="sm",
+                  icon="HelpCircle",
+                  on_click=ui.Call("__panel__make_connect_help")),
+        ui.Form(
+            action="connect_make",
+            submit_label="Verify and connect",
+            children=[
+                ui.Password(param_name="api_token", placeholder="Make API token"),
+            ],
+        ),
+    ])
 
 
 def _team_picker_section(teams: list[dict]) -> ui.UINode:
@@ -168,37 +148,6 @@ def _scenarios_section(scenarios: list[dict]) -> ui.UINode:
     ])
 
 
-def _webhook_section(configured: bool) -> ui.UINode:
-    """Independent of connect_make -- this is a Make Custom Webhook trigger
-    URL the user pastes here so other Imperal apps/automations can fire a
-    Make scenario via send_webhook_event. Plain section, no Card wrapper."""
-    if configured:
-        return ui.Stack(direction="v", gap=2, children=[
-            ui.Divider(),
-            ui.Text("Outgoing webhook", variant="heading"),
-            ui.Badge(label="Configured", color="green"),
-            ui.Button(
-                "Clear webhook", variant="secondary", size="sm",
-                on_click=ui.Call("set_outgoing_webhook", webhook_url=""),
-            ),
-        ])
-    return ui.Stack(direction="v", gap=2, children=[
-        ui.Divider(),
-        ui.Text("Outgoing webhook", variant="heading"),
-        ui.Text("Send events from Imperal to a Make scenario", variant="caption"),
-        ui.Form(
-            children=[
-                ui.Input(
-                    placeholder="Paste a Make Custom Webhook URL...",
-                    param_name="webhook_url",
-                ),
-            ],
-            submit_label="Save webhook",
-            action="set_outgoing_webhook",
-        ),
-    ])
-
-
 @ext.panel("make_connect", slot="left", title="Make.com", icon="🧩",
            default_width=320, min_width=260, max_width=420)
 async def make_connect_panel(ctx, **kwargs) -> object:
@@ -208,21 +157,20 @@ async def make_connect_panel(ctx, **kwargs) -> object:
     header = ui.Header(text="Make.com", level=2,
                         subtitle="Run and monitor your Make scenarios from Imperal")
 
-    webhook_configured = bool(await ctx.secrets.get("make_webhook_url"))
-
     if not connected:
-        return ui.Stack(direction="v", gap=4, children=[
+        return ui.Stack(direction="v", gap=4, align="start", children=[
             header,
-            _connect_card(),
+            _connect_section(),
             ui.Alert(
                 title="Not connected yet",
                 message="Connect your Make.com account to see and run your scenarios.",
                 type="info",
             ),
-            _webhook_section(webhook_configured),
+            ui.Divider(),
+            _settings_button(),
         ])
 
-    children: list[ui.UINode] = [header, _connected_card(f"Zone: {zone}")]
+    children: list[ui.UINode] = [header, _connected_section(f"Zone: {zone}")]
 
     team_id = await h._get_team_scope(ctx)
     if not team_id:
@@ -256,8 +204,9 @@ async def make_connect_panel(ctx, **kwargs) -> object:
         children.append(ui.Alert(title="Couldn't load scenarios", message=str(exc), type="danger"))
 
     children.append(_scenarios_section(scenarios))
-    children.append(_webhook_section(webhook_configured))
-    return ui.Stack(direction="v", gap=4, children=children)
+    children.append(ui.Divider())
+    children.append(_settings_button())
+    return ui.Stack(direction="v", gap=4, align="start", children=children)
 
 
 @ext.panel("make_connect_help", slot="center", title="How to get a Make API token",
