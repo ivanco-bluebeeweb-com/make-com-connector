@@ -40,15 +40,10 @@ def _connected_section(detail: str) -> ui.UINode:
 
 def _connect_section() -> ui.UINode:
     """Plain content, no Card wrapper -- shown only while not connected.
-    Stretched full-width per UI_INTERFACE_STANDARD.md (2026-08-20)."""
+    Stretched full-width per UI_INTERFACE_STANDARD.md (2026-08-20). No
+    intro heading/description text here -- that instruction lives ONLY in
+    make_connect_help's modal (button below opens it)."""
     return ui.Stack(direction="v", gap=3, align="stretch", children=[
-        ui.Text("Connect Make.com", variant="heading"),
-        ui.Text(
-            "Bring your own Make.com account. Paste your Make API token "
-            "below. It's verified against your account before saving, and "
-            "your zone (eu1/eu2/us1/us2) is detected automatically.",
-            variant="caption",
-        ),
         ui.Button("How do I get a token?", variant="ghost", size="sm",
                   icon="HelpCircle",
                   on_click=ui.Call("__panel__make_connect_help")),
@@ -165,11 +160,6 @@ async def make_connect_panel(ctx, **kwargs) -> object:
         return ui.Stack(direction="v", gap=4, align="stretch", children=[
             header,
             _connect_section(),
-            ui.Alert(
-                title="Not connected yet",
-                message="Connect your Make.com account to see and run your scenarios.",
-                type="info",
-            ),
             ui.Divider(),
             _settings_button(),
         ])

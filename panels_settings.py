@@ -22,7 +22,6 @@ def _connection_section(zone: str, connected: bool) -> ui.UINode:
     if not connected:
         return ui.Stack(direction="v", gap=2, align="stretch", children=[
             ui.Text("Connection", variant="heading"),
-            ui.Text("Not connected.", variant="caption"),
             ui.Text(
                 "Paste your Make API token below. It's verified against "
                 "your account before saving, and your zone (eu1/eu2/us1/"
