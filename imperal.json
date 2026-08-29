@@ -1,6 +1,6 @@
 {
   "manifest_schema_version": 3,
-  "sdk_version": "5.9.22",
+  "sdk_version": "5.13.0",
   "app_id": "make-com-connector",
   "version": "0.1.0",
   "name": "Make.com",
@@ -9,8 +9,8 @@
   "actions_explicit": true,
   "system": false,
   "capabilities": [
-    "make-com-connector:read",
-    "make-com-connector:write"
+    "make:read",
+    "make:write"
   ],
   "tools": [
     {
@@ -118,7 +118,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "disconnect_make",
@@ -219,7 +219,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "get_make_connection",
@@ -318,7 +318,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "list_make_teams",
@@ -461,7 +461,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "select_team",
@@ -570,11 +570,11 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "list_scenarios",
-      "description": "List your Make.com scenarios for the selected team -- name, active/paused/invalid state, and last edit time. Run connect_make and select_team first if you haven't yet.",
+      "description": "List your Make.com scenarios for the selected team -- name, active/ paused/invalid state, and last edit time. Run connect_make and select_team first if you haven't yet.",
       "action_type": "read",
       "chain_callable": true,
       "effects": [],
@@ -769,7 +769,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "run_scenario",
@@ -871,7 +871,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "set_scenario_active",
@@ -986,7 +986,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "set_outgoing_webhook",
@@ -1012,17 +1012,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -1090,10 +1085,6 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "OutgoingWebhookStatus",
         "type": "object",
         "x-sdl": "entity"
@@ -1102,7 +1093,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "get_outgoing_webhook_status",
@@ -1120,17 +1111,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -1198,10 +1184,6 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "OutgoingWebhookStatus",
         "type": "object",
         "x-sdl": "entity"
@@ -1210,7 +1192,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "send_webhook_event",
@@ -1236,17 +1218,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -1319,10 +1296,6 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "WebhookDeliveryResult",
         "type": "object",
         "x-sdl": "entity"
@@ -1331,7 +1304,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "get_scenario_blueprint",
@@ -1540,7 +1513,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "list_connections",
@@ -1701,7 +1674,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "delete_connection",
@@ -1732,6 +1705,7 @@
             "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -1794,9 +1768,6 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "title"
-        ],
         "title": "DeleteResult",
         "type": "object",
         "x-sdl": "entity"
@@ -1805,7 +1776,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "rename_connection",
@@ -1933,7 +1904,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "verify_connection",
@@ -1959,17 +1930,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -2037,10 +2003,6 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "ConnectionVerifyResult",
         "type": "object",
         "x-sdl": "entity"
@@ -2049,7 +2011,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "list_data_stores",
@@ -2205,7 +2167,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "create_data_store",
@@ -2342,7 +2304,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "delete_data_store",
@@ -2373,6 +2335,7 @@
             "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -2435,9 +2398,6 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "title"
-        ],
         "title": "DeleteResult",
         "type": "object",
         "x-sdl": "entity"
@@ -2446,7 +2406,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "list_hooks",
@@ -2607,7 +2567,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "set_hook_enabled",
@@ -2735,7 +2695,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "delete_hook",
@@ -2766,6 +2726,7 @@
             "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -2828,9 +2789,6 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "title"
-        ],
         "title": "DeleteResult",
         "type": "object",
         "x-sdl": "entity"
@@ -2839,7 +2797,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "list_incomplete_executions",
@@ -3027,7 +2985,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "retry_incomplete_execution",
@@ -3154,11 +3112,11 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "delete_incomplete_executions",
-      "description": "Permanently delete one scenario's incomplete executions -- explicit ids, or all=true with confirm=true to clear every one.",
+      "description": "Permanently delete one scenario's incomplete executions -- explicit ids, or all=true to clear every one.",
       "action_type": "destructive",
       "chain_callable": true,
       "effects": [],
@@ -3194,17 +3152,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -3282,10 +3235,6 @@
             "type": "array"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "BulkDeleteResult",
         "type": "object",
         "x-sdl": "entity"
@@ -3294,7 +3243,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "bulk_set_scenario_active",
@@ -3333,17 +3282,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -3420,10 +3364,6 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "BulkScenarioStateResult",
         "type": "object",
         "x-sdl": "entity"
@@ -3432,11 +3372,11 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "bulk_run_scenarios",
-      "description": "Run SEVERAL Make scenarios right now, by explicit scenario ids. Executes real actions in each scenario immediately -- no dry-run, always requires confirm=true.",
+      "description": "Run SEVERAL Make scenarios right now, by explicit scenario ids. Executes real actions in each scenario immediately -- no dry-run.",
       "action_type": "destructive",
       "chain_callable": true,
       "effects": [
@@ -3465,17 +3405,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -3547,10 +3482,6 @@
             "type": "object"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "BulkRunResult",
         "type": "object",
         "x-sdl": "entity"
@@ -3559,7 +3490,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "bulk_delete_connections",
@@ -3590,17 +3521,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -3678,10 +3604,6 @@
             "type": "array"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "BulkDeleteResult",
         "type": "object",
         "x-sdl": "entity"
@@ -3690,7 +3612,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "bulk_delete_hooks",
@@ -3721,17 +3643,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -3809,10 +3726,6 @@
             "type": "array"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "BulkDeleteResult",
         "type": "object",
         "x-sdl": "entity"
@@ -3821,7 +3734,7 @@
       "background": false,
       "long_running": false,
       "scopes": [],
-      "owner_chat_tool": "make_com_connector"
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "preview_update_blueprint_module",
@@ -3878,17 +3791,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -3981,14 +3889,15 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "BlueprintModuleFieldPreview",
         "type": "object",
         "x-sdl": "entity"
-      }
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "apply_update_blueprint_module",
@@ -4066,17 +3975,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -4159,15 +4063,15 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "BlueprintModuleUpdateResult",
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "make-com-connector.apply_update_blueprint_module"
+      "event": "make-com-connector.apply_update_blueprint_module",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "create_scenario",
@@ -4360,7 +4264,11 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "make-com-connector.create_scenario"
+      "event": "make-com-connector.create_scenario",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "delete_scenario",
@@ -4393,6 +4301,7 @@
             "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -4455,14 +4364,15 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "title"
-        ],
         "title": "DeleteResult",
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "make-com-connector.delete_scenario"
+      "event": "make-com-connector.delete_scenario",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "restore_scenario",
@@ -4604,7 +4514,11 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "make-com-connector.restore_scenario"
+      "event": "make-com-connector.restore_scenario",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "clone_scenario",
@@ -4784,7 +4698,11 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "make-com-connector.clone_scenario"
+      "event": "make-com-connector.clone_scenario",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "update_scheduling",
@@ -4844,17 +4762,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -4927,15 +4840,15 @@
             "type": "integer"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "SchedulingResult",
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "make-com-connector.update_scheduling"
+      "event": "make-com-connector.update_scheduling",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "list_buildtime_variables",
@@ -4963,17 +4876,12 @@
           "BuildtimeVariable": {
             "properties": {
               "id": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "integer"
-                  }
-                ],
-                "title": "Id"
+                "default": "",
+                "title": "Id",
+                "type": "string"
               },
               "title": {
+                "default": "",
                 "title": "Title",
                 "type": "string"
               },
@@ -5041,10 +4949,6 @@
                 "type": "string"
               }
             },
-            "required": [
-              "id",
-              "title"
-            ],
             "title": "BuildtimeVariable",
             "type": "object",
             "x-sdl": "entity"
@@ -5099,7 +5003,12 @@
         "title": "BuildtimeVariableList",
         "type": "object",
         "x-sdl": "entity-list"
-      }
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "set_buildtime_variable",
@@ -5145,17 +5054,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -5223,15 +5127,15 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "BuildtimeVariable",
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "make-com-connector.set_buildtime_variable"
+      "event": "make-com-connector.set_buildtime_variable",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "delete_buildtime_variable",
@@ -5270,6 +5174,7 @@
             "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -5332,14 +5237,15 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "title"
-        ],
         "title": "DeleteResult",
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "make-com-connector.delete_buildtime_variable"
+      "event": "make-com-connector.delete_buildtime_variable",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "get_scenario_usage",
@@ -5367,17 +5273,12 @@
           "UsageDay": {
             "properties": {
               "id": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "integer"
-                  }
-                ],
-                "title": "Id"
+                "default": "",
+                "title": "Id",
+                "type": "string"
               },
               "title": {
+                "default": "",
                 "title": "Title",
                 "type": "string"
               },
@@ -5455,10 +5356,6 @@
                 "type": "integer"
               }
             },
-            "required": [
-              "id",
-              "title"
-            ],
             "title": "UsageDay",
             "type": "object",
             "x-sdl": "entity"
@@ -5513,7 +5410,12 @@
         "title": "ScenarioUsageReport",
         "type": "object",
         "x-sdl": "entity-list"
-      }
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "list_scenario_logs",
@@ -5707,7 +5609,12 @@
         "title": "ScenarioExecutionLogList",
         "type": "object",
         "x-sdl": "entity-list"
-      }
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "get_execution_details",
@@ -5824,7 +5731,12 @@
         "title": "ExecutionDetails",
         "type": "object",
         "x-sdl": "entity"
-      }
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "stop_execution",
@@ -5869,6 +5781,7 @@
             "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -5931,14 +5844,15 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "title"
-        ],
         "title": "DeleteResult",
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "make-com-connector.stop_execution"
+      "event": "make-com-connector.stop_execution",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "preview_add_blueprint_module",
@@ -6002,17 +5916,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -6100,14 +6009,15 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "BlueprintModuleAddPreview",
         "type": "object",
         "x-sdl": "entity"
-      }
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "apply_add_blueprint_module",
@@ -6166,17 +6076,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -6249,15 +6154,15 @@
             "type": "integer"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "BlueprintModuleAddResult",
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "make-com-connector.apply_add_blueprint_module"
+      "event": "make-com-connector.apply_add_blueprint_module",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "preview_delete_blueprint_module",
@@ -6302,17 +6207,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -6400,14 +6300,15 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "BlueprintModuleDeletePreview",
         "type": "object",
         "x-sdl": "entity"
-      }
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "apply_delete_blueprint_module",
@@ -6447,17 +6348,12 @@
       "return_schema": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "title": "Id"
+            "default": "",
+            "title": "Id",
+            "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -6530,21 +6426,23 @@
             "type": "integer"
           }
         },
-        "required": [
-          "id",
-          "title"
-        ],
         "title": "BlueprintModuleDeleteResult",
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "make-com-connector.apply_delete_blueprint_module"
+      "event": "make-com-connector.apply_delete_blueprint_module",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "list_organizations",
       "description": "List the Make.com organizations the connected account belongs to -- the level above teams (an organization can contain several teams).",
       "action_type": "read",
       "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
       "params_schema": {
         "properties": {},
         "title": "ListOrganizationsParams",
@@ -6687,13 +6585,20 @@
         "title": "MakeOrganizationList",
         "type": "object",
         "x-sdl": "entity-list"
-      }
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "list_team_members",
       "description": "List the people with access to a Make team and their role -- Team Member, Team Admin, Team Monitoring, or a custom org role (shown by its numeric id).",
       "action_type": "read",
       "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
       "params_schema": {
         "properties": {
           "team_id": {
@@ -6856,13 +6761,20 @@
         "title": "TeamMemberList",
         "type": "object",
         "x-sdl": "entity-list"
-      }
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "list_api_tokens",
       "description": "List the connected Make user's own API tokens -- label, scopes, creation date, and a masked form. Never exposes a usable secret; use create_api_token to mint a new one when a real value is needed.",
       "action_type": "read",
       "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
       "params_schema": {
         "properties": {},
         "title": "ListApiTokensParams",
@@ -7008,13 +6920,22 @@
         "title": "MakeApiTokenList",
         "type": "object",
         "x-sdl": "entity-list"
-      }
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "create_api_token",
       "description": "Create a brand-new Make API token for the CONNECTED user's own account. The secret value is returned exactly ONCE, same as Make's own UI -- it cannot be retrieved again afterwards. This mints a real, usable credential -- treat it like creating a password.",
       "action_type": "write",
       "chain_callable": true,
+      "effects": [
+        "make.api_token.created"
+      ],
+      "id_projection": "",
       "params_schema": {
         "properties": {
           "label": {
@@ -7132,16 +7053,21 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "effects": [
-        "make.api_token.created"
-      ],
-      "event": "make-com-connector.create_api_token"
+      "event": "make-com-connector.create_api_token",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "delete_api_token",
       "description": "Permanently delete one of the connected user's own Make API tokens. Anything using it (external scripts, other integrations) stops working immediately.",
       "action_type": "destructive",
       "chain_callable": true,
+      "effects": [
+        "make.api_token.deleted"
+      ],
+      "id_projection": "",
       "params_schema": {
         "properties": {
           "created_timestamp": {
@@ -7164,6 +7090,7 @@
             "type": "string"
           },
           "title": {
+            "default": "",
             "title": "Title",
             "type": "string"
           },
@@ -7226,23 +7153,95 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "title"
-        ],
         "title": "DeleteResult",
         "type": "object",
         "x-sdl": "entity"
       },
-      "effects": [
-        "make.api_token.deleted"
-      ],
-      "event": "make-com-connector.delete_api_token"
+      "event": "make-com-connector.delete_api_token",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     },
     {
       "name": "create_hook",
       "description": "Create a new incoming webhook/mailhook (Make 'hook') in a team -- a fresh trigger point a scenario can listen on. For a generic HTTP webhook, type_name='gateway-webhook' works without a connection_id; app-specific hook types may need one -- check an existing similar hook via list_hooks first when unsure.",
       "action_type": "write",
       "chain_callable": true,
+      "effects": [
+        "make.hook.created"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "name": {
+            "description": "Display name for the new hook.",
+            "title": "Name",
+            "type": "string"
+          },
+          "team_id": {
+            "description": "Make team id (see list_make_teams).",
+            "title": "Team Id",
+            "type": "integer"
+          },
+          "type_name": {
+            "description": "Hook type, e.g. 'gateway-webhook' for a generic incoming webhook, or an app-specific hook type. Check an existing similar hook's type_name via list_hooks first when unsure.",
+            "title": "Type Name",
+            "type": "string"
+          },
+          "include_method": {
+            "default": false,
+            "description": "True to also capture the HTTP method of incoming requests.",
+            "title": "Include Method",
+            "type": "boolean"
+          },
+          "include_headers": {
+            "default": false,
+            "description": "True to also capture HTTP headers of incoming requests.",
+            "title": "Include Headers",
+            "type": "boolean"
+          },
+          "stringify": {
+            "default": false,
+            "description": "True to pass the raw body as a string instead of parsed JSON.",
+            "title": "Stringify",
+            "type": "boolean"
+          },
+          "connection_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional connection id, required by some app-specific hook types (not needed for a generic gateway-webhook).",
+            "title": "Connection Id"
+          },
+          "form_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional form id, only used by form-based hook types.",
+            "title": "Form Id"
+          }
+        },
+        "required": [
+          "name",
+          "team_id",
+          "type_name"
+        ],
+        "title": "CreateHookParams",
+        "type": "object"
+      },
       "return_schema": {
         "properties": {
           "id": {
@@ -7338,106 +7337,37 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "effects": [
-        "make.hook.created"
-      ],
       "event": "make-com-connector.create_hook",
-      "params_schema": {
-        "properties": {
-          "name": {
-            "description": "Display name for the new hook.",
-            "title": "Name",
-            "type": "string"
-          },
-          "team_id": {
-            "description": "Make team id (see list_make_teams).",
-            "title": "Team Id",
-            "type": "integer"
-          },
-          "type_name": {
-            "description": "Hook type, e.g. 'gateway-webhook' for a generic incoming webhook, or an app-specific hook type. Check an existing similar hook's type_name via list_hooks first when unsure.",
-            "title": "Type Name",
-            "type": "string"
-          },
-          "include_method": {
-            "default": false,
-            "description": "True to also capture the HTTP method of incoming requests.",
-            "title": "Include Method",
-            "type": "boolean"
-          },
-          "include_headers": {
-            "default": false,
-            "description": "True to also capture HTTP headers of incoming requests.",
-            "title": "Include Headers",
-            "type": "boolean"
-          },
-          "stringify": {
-            "default": false,
-            "description": "True to pass the raw body as a string instead of parsed JSON.",
-            "title": "Stringify",
-            "type": "boolean"
-          },
-          "connection_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Optional connection id, required by some app-specific hook types (not needed for a generic gateway-webhook).",
-            "title": "Connection Id"
-          },
-          "form_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Optional form id, only used by form-based hook types.",
-            "title": "Form Id"
-          }
-        },
-        "required": [
-          "name",
-          "team_id",
-          "type_name"
-        ],
-        "title": "CreateHookParams",
-        "type": "object"
-      }
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "make-com-connector"
     }
   ],
   "signals": [],
   "schedules": [],
   "required_scopes": [],
-  "icon_size_bytes": 425,
-  "webhooks": [],
+  "icon_size_bytes": 614,
   "lifecycle": {
-    "on_install": false
+    "health_check": {
+      "interval_sec": 60
+    }
   },
-  "lifecycle_hooks": {},
   "secrets": [
     {
       "name": "make_api_token",
-      "description": "Your own Make.com API token, from Make: avatar (bottom-left) -> Profile -> API tab -> Add token.",
+      "description": "Make.com API token -- create it in Make: click your avatar (bottom-left) -> Profile -> API tab -> Add token. Verified against your Make account before saving.",
       "required": false,
       "write_mode": "both",
-      "max_bytes": 512,
+      "max_bytes": 4096,
       "scope": "user"
     },
     {
       "name": "make_zone",
-      "description": "Auto-detected Make.com account zone (eu1/eu2/us1/us2) -- set automatically by connect_make, not entered manually.",
+      "description": "Make.com zone host (e.g. eu1.make.com) auto-detected when you connect -- not something you need to enter yourself.",
       "required": false,
       "write_mode": "both",
-      "max_bytes": 64,
+      "max_bytes": 4096,
       "scope": "user"
     },
     {
@@ -7445,19 +7375,31 @@
       "description": "Outgoing Make Custom Webhook trigger URL (from a Make scenario's Custom Webhook module) -- send_webhook_event POSTs to this. Independent of the make_api_token connection above.",
       "required": false,
       "write_mode": "both",
-      "max_bytes": 500,
+      "max_bytes": 4096,
       "scope": "user"
     }
   ],
   "panels": [
     {
+      "panel_id": "secrets",
+      "slot": "right",
+      "title": "Secrets",
+      "tree": {},
+      "icon": "KeyRound",
+      "refresh": "manual",
+      "center_overlay": false
+    },
+    {
       "panel_id": "make_connect",
       "slot": "left",
       "title": "Make.com",
       "tree": {},
-      "icon": "\ud83e\udde9",
+      "icon": "🧩",
       "refresh": "manual",
-      "center_overlay": false
+      "center_overlay": false,
+      "default_width": 320,
+      "min_width": 260,
+      "max_width": 420
     },
     {
       "panel_id": "make_connect_help",
@@ -7465,6 +7407,24 @@
       "title": "How to get a Make API token",
       "tree": {},
       "icon": "",
+      "refresh": "manual",
+      "center_overlay": true
+    },
+    {
+      "panel_id": "make_center",
+      "slot": "center",
+      "title": "Make.com",
+      "tree": {},
+      "icon": "🧩",
+      "refresh": "manual",
+      "center_overlay": true
+    },
+    {
+      "panel_id": "make_settings",
+      "slot": "center",
+      "title": "App settings",
+      "tree": {},
+      "icon": "⚙️",
       "refresh": "manual",
       "center_overlay": true
     }

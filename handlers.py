@@ -115,7 +115,7 @@ async def connect_make(ctx, params: ConnectMakeParams) -> ActionResult:
     try:
         zone, who = await mc.discover_zone(ctx, token)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
 
     await ctx.secrets.set("make_api_token", token)
     await ctx.secrets.set("make_zone", zone)
@@ -188,6 +188,7 @@ async def get_make_connection(ctx, params: NoParams) -> ActionResult:
     data_model=MakeTeamList,
 )
 async def list_make_teams(ctx, params: NoParams) -> ActionResult:
+    """Run the Make.com operation: list make teams."""
     token, zone = await _get_credentials(ctx)
     if not (token and zone):
         return ActionResult.error(
@@ -206,7 +207,7 @@ async def list_make_teams(ctx, params: NoParams) -> ActionResult:
                 t["organizationId"] = org_id
             teams.extend(org_teams)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
 
     items = [
         MakeTeam(
@@ -234,6 +235,7 @@ async def list_make_teams(ctx, params: NoParams) -> ActionResult:
     effects=["make.team_scope.changed"],
 )
 async def select_team(ctx, params: SelectTeamParams) -> ActionResult:
+    """Run the Make.com operation: select team."""
     await _set_team_scope(ctx, params.team_id)
     return ActionResult.success(
         ProviderConnection(connected=True, detail=f"Scoped to team {params.team_id}"),
@@ -252,6 +254,7 @@ async def select_team(ctx, params: SelectTeamParams) -> ActionResult:
     data_model=MakeScenarioList,
 )
 async def list_scenarios(ctx, params: ListScenariosParams) -> ActionResult:
+    """Run the Make.com operation: list scenarios."""
     token, zone = await _get_credentials(ctx)
     if not (token and zone):
         return ActionResult.error(
@@ -270,7 +273,7 @@ async def list_scenarios(ctx, params: ListScenariosParams) -> ActionResult:
             limit=params.limit, offset=params.offset,
         )
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
 
     items = [
         MakeScenario(
@@ -328,7 +331,7 @@ async def run_scenario(ctx, params: RunScenarioParams) -> ActionResult:
     try:
         result = await mc.run_scenario(ctx, token, zone, params.scenario_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
 
     execution = result.get("executions") or [{}]
     first = execution[0] if execution else {}
@@ -362,6 +365,7 @@ async def run_scenario(ctx, params: RunScenarioParams) -> ActionResult:
     effects=["make.scenario.state_changed"],
 )
 async def set_scenario_active(ctx, params: SetScenarioActiveParams) -> ActionResult:
+    """Run the Make.com operation: set scenario active."""
     token, zone = await _get_credentials(ctx)
     if not (token and zone):
         return ActionResult.error(
@@ -375,7 +379,7 @@ async def set_scenario_active(ctx, params: SetScenarioActiveParams) -> ActionRes
         else:
             scenario = await mc.stop_scenario(ctx, token, zone, params.scenario_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
 
     is_active = bool(scenario.get("isActive", params.active))
     verb = "activated" if is_active else "deactivated"
@@ -445,6 +449,7 @@ async def set_outgoing_webhook(ctx, params: SetOutgoingWebhookParams) -> ActionR
     data_model=OutgoingWebhookStatus,
 )
 async def get_outgoing_webhook_status(ctx, params: NoParams) -> ActionResult:
+    """Run the Make.com operation: get outgoing webhook status."""
     url = await ctx.secrets.get(_WEBHOOK_SECRET_NAME)
     configured = bool(url)
     return ActionResult.success(
@@ -467,6 +472,7 @@ async def get_outgoing_webhook_status(ctx, params: NoParams) -> ActionResult:
     effects=["make.webhook.sent"],
 )
 async def send_webhook_event(ctx, params: SendWebhookEventParams) -> ActionResult:
+    """Run the Make.com operation: send webhook event."""
     url = await ctx.secrets.get(_WEBHOOK_SECRET_NAME)
     if not url:
         return ActionResult.error(
@@ -550,13 +556,14 @@ def _flatten_blueprint_modules(flow: list) -> list[BlueprintModule]:
     data_model=BlueprintModuleList,
 )
 async def get_scenario_blueprint(ctx, params: GetScenarioBlueprintParams) -> ActionResult:
+    """Run the Make.com operation: get scenario blueprint."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id, draft=params.draft)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     flow = blueprint.get("flow") or []
     modules = _flatten_blueprint_modules(flow)
     scenario_name = blueprint.get("name") or ""
@@ -585,6 +592,7 @@ async def get_scenario_blueprint(ctx, params: GetScenarioBlueprintParams) -> Act
     data_model=MakeConnectionList,
 )
 async def list_connections(ctx, params: ListConnectionsParams) -> ActionResult:
+    """Run the Make.com operation: list connections."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -596,7 +604,7 @@ async def list_connections(ctx, params: ListConnectionsParams) -> ActionResult:
     try:
         raw = await mc.list_connections(ctx, token, zone, team_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     items = [
         MakeConnection(
             id=str(c.get("id", "")), title=c.get("name") or c.get("accountName") or f"Connection {c.get('id')}",
@@ -616,15 +624,18 @@ async def list_connections(ctx, params: ListConnectionsParams) -> ActionResult:
     action_type="destructive",
     chain_callable=True,
     data_model=DeleteResult,
+    event="make-com-connector.delete_connection",
+    effects=["delete:make.resource"],
 )
 async def delete_connection(ctx, params: DeleteConnectionParams) -> ActionResult:
+    """Run the Make.com operation: delete connection."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         deleted_id = await mc.delete_connection(ctx, token, zone, params.connection_id, confirmed=True)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         DeleteResult(id=str(deleted_id), deleted=True),
         summary=f"Connection {deleted_id} deleted.",
@@ -637,15 +648,18 @@ async def delete_connection(ctx, params: DeleteConnectionParams) -> ActionResult
     action_type="write",
     chain_callable=True,
     data_model=MakeConnection,
+    event="make-com-connector.rename_connection",
+    effects=["update:make.resource"],
 )
 async def rename_connection(ctx, params: RenameConnectionParams) -> ActionResult:
+    """Run the Make.com operation: rename connection."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         c = await mc.rename_connection(ctx, token, zone, params.connection_id, params.name)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         MakeConnection(
             id=str(c.get("id", params.connection_id)), title=c.get("name") or params.name,
@@ -663,13 +677,14 @@ async def rename_connection(ctx, params: RenameConnectionParams) -> ActionResult
     data_model=ConnectionVerifyResult,
 )
 async def verify_connection(ctx, params: VerifyConnectionParams) -> ActionResult:
+    """Run the Make.com operation: verify connection."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         ok = await mc.verify_connection(ctx, token, zone, params.connection_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         ConnectionVerifyResult(connection_id=params.connection_id, verified=ok),
         summary="Connection is valid." if ok else "Connection failed verification.",
@@ -690,6 +705,7 @@ async def verify_connection(ctx, params: VerifyConnectionParams) -> ActionResult
     data_model=MakeDataStoreList,
 )
 async def list_data_stores(ctx, params: ListDataStoresParams) -> ActionResult:
+    """Run the Make.com operation: list data stores."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -699,7 +715,7 @@ async def list_data_stores(ctx, params: ListDataStoresParams) -> ActionResult:
     try:
         raw = await mc.list_data_stores(ctx, token, zone, team_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     items = [
         MakeDataStore(
             id=str(d.get("id", "")), title=d.get("name", ""), data_store_id=int(d.get("id") or 0),
@@ -716,8 +732,11 @@ async def list_data_stores(ctx, params: ListDataStoresParams) -> ActionResult:
     action_type="write",
     chain_callable=True,
     data_model=MakeDataStore,
+    event="make-com-connector.create_data_store",
+    effects=["update:make.resource"],
 )
 async def create_data_store(ctx, params: CreateDataStoreParams) -> ActionResult:
+    """Run the Make.com operation: create data store."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -730,7 +749,7 @@ async def create_data_store(ctx, params: CreateDataStoreParams) -> ActionResult:
             max_size_mb=params.max_size_mb, data_structure_id=params.data_structure_id,
         )
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         MakeDataStore(
             id=str(d.get("id", "")), title=d.get("name", params.name),
@@ -746,15 +765,18 @@ async def create_data_store(ctx, params: CreateDataStoreParams) -> ActionResult:
     action_type="destructive",
     chain_callable=True,
     data_model=DeleteResult,
+    event="make-com-connector.delete_data_store",
+    effects=["delete:make.resource"],
 )
 async def delete_data_store(ctx, params: DeleteDataStoreParams) -> ActionResult:
+    """Run the Make.com operation: delete data store."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         deleted_id = await mc.delete_data_store(ctx, token, zone, params.data_store_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         DeleteResult(id=str(deleted_id), deleted=True),
         summary=f"Data store {deleted_id} deleted.",
@@ -777,6 +799,7 @@ async def delete_data_store(ctx, params: DeleteDataStoreParams) -> ActionResult:
     data_model=MakeHookList,
 )
 async def list_hooks(ctx, params: ListHooksParams) -> ActionResult:
+    """Run the Make.com operation: list hooks."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -786,7 +809,7 @@ async def list_hooks(ctx, params: ListHooksParams) -> ActionResult:
     try:
         raw = await mc.list_hooks(ctx, token, zone, team_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     items = [
         MakeHook(
             id=str(h.get("id", "")), title=h.get("name", ""), hook_id=int(h.get("id") or 0),
@@ -806,15 +829,18 @@ async def list_hooks(ctx, params: ListHooksParams) -> ActionResult:
     action_type="write",
     chain_callable=True,
     data_model=MakeHook,
+    event="make-com-connector.set_hook_enabled",
+    effects=["update:make.resource"],
 )
 async def set_hook_enabled(ctx, params: SetHookEnabledParams) -> ActionResult:
+    """Run the Make.com operation: set hook enabled."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         ok = await mc.set_hook_enabled(ctx, token, zone, params.hook_id, params.enabled)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     verb = "enabled" if params.enabled else "disabled"
     return ActionResult.success(
         MakeHook(id=str(params.hook_id), hook_id=params.hook_id, enabled=params.enabled),
@@ -829,15 +855,18 @@ async def set_hook_enabled(ctx, params: SetHookEnabledParams) -> ActionResult:
     action_type="destructive",
     chain_callable=True,
     data_model=DeleteResult,
+    event="make-com-connector.delete_hook",
+    effects=["delete:make.resource"],
 )
 async def delete_hook(ctx, params: DeleteHookParams) -> ActionResult:
+    """Run the Make.com operation: delete hook."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         deleted_id = await mc.delete_hook(ctx, token, zone, params.hook_id, confirmed=True)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         DeleteResult(id=str(deleted_id), deleted=True),
         summary=f"Hook {deleted_id} deleted.",
@@ -859,13 +888,14 @@ async def delete_hook(ctx, params: DeleteHookParams) -> ActionResult:
     data_model=IncompleteExecutionList,
 )
 async def list_incomplete_executions(ctx, params: ListIncompleteExecutionsParams) -> ActionResult:
+    """Run the Make.com operation: list incomplete executions."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         raw = await mc.list_incomplete_executions(ctx, token, zone, params.scenario_id, status=params.status)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     items = [
         IncompleteExecution(
             id=str(e.get("id", "")), title=e.get("reason") or f"Execution {e.get('id')}",
@@ -884,15 +914,18 @@ async def list_incomplete_executions(ctx, params: ListIncompleteExecutionsParams
     action_type="write",
     chain_callable=True,
     data_model=IncompleteExecution,
+    event="make-com-connector.retry_incomplete_execution",
+    effects=["update:make.resource"],
 )
 async def retry_incomplete_execution(ctx, params: RetryIncompleteExecutionParams) -> ActionResult:
+    """Run the Make.com operation: retry incomplete execution."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         await mc.retry_incomplete_execution(ctx, token, zone, params.dlq_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         IncompleteExecution(id=params.dlq_id, retry=True),
         summary=f"Retry requested for incomplete execution {params.dlq_id}.",
@@ -906,8 +939,11 @@ async def retry_incomplete_execution(ctx, params: RetryIncompleteExecutionParams
     action_type="destructive",
     chain_callable=True,
     data_model=BulkDeleteResult,
+    event="make-com-connector.delete_incomplete_executions",
+    effects=["delete:make.resource"],
 )
 async def delete_incomplete_executions(ctx, params: DeleteIncompleteExecutionsParams) -> ActionResult:
+    """Run the Make.com operation: delete incomplete executions."""
     if not params.all and not params.dlq_ids:
         return ActionResult.error(
             "Pass explicit dlq_ids, or all=true to delete every incomplete execution.",
@@ -922,7 +958,7 @@ async def delete_incomplete_executions(ctx, params: DeleteIncompleteExecutionsPa
             ids=params.dlq_ids or None, all_=params.all, confirmed=True,
         )
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     ids = [str(d) for d in deleted] if isinstance(deleted, list) else params.dlq_ids
     return ActionResult.success(
         BulkDeleteResult(deleted_count=len(ids), ids=ids),
@@ -948,6 +984,7 @@ async def delete_incomplete_executions(ctx, params: DeleteIncompleteExecutionsPa
     effects=["make.scenario.bulk_state_changed"],
 )
 async def bulk_set_scenario_active(ctx, params: BulkSetScenarioActiveParams) -> ActionResult:
+    """Run the Make.com operation: bulk set scenario active."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -982,6 +1019,7 @@ async def bulk_set_scenario_active(ctx, params: BulkSetScenarioActiveParams) -> 
     effects=["make.scenario.bulk_run"],
 )
 async def bulk_run_scenarios(ctx, params: BulkRunScenariosParams) -> ActionResult:
+    """Run the Make.com operation: bulk run scenarios."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1013,8 +1051,11 @@ async def bulk_run_scenarios(ctx, params: BulkRunScenariosParams) -> ActionResul
     action_type="destructive",
     chain_callable=True,
     data_model=BulkDeleteResult,
+    event="make-com-connector.bulk_delete_connections",
+    effects=["delete:make.resource"],
 )
 async def bulk_delete_connections(ctx, params: BulkDeleteConnectionsParams) -> ActionResult:
+    """Run the Make.com operation: bulk delete connections."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1039,8 +1080,11 @@ async def bulk_delete_connections(ctx, params: BulkDeleteConnectionsParams) -> A
     action_type="destructive",
     chain_callable=True,
     data_model=BulkDeleteResult,
+    event="make-com-connector.bulk_delete_hooks",
+    effects=["delete:make.resource"],
 )
 async def bulk_delete_hooks(ctx, params: BulkDeleteHooksParams) -> ActionResult:
+    """Run the Make.com operation: bulk delete hooks."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1097,13 +1141,14 @@ def _find_module_in_flow(flow: list, module_id: int) -> dict | None:
     data_model=BlueprintModuleFieldPreview,
 )
 async def preview_update_blueprint_module(ctx, params: PreviewUpdateBlueprintModuleParams) -> ActionResult:
+    """Run the Make.com operation: preview update blueprint module."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id, draft=params.draft)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     flow = blueprint.get("flow") or []
     module = _find_module_in_flow(flow, params.module_id)
     if module is None:
@@ -1142,13 +1187,14 @@ async def preview_update_blueprint_module(ctx, params: PreviewUpdateBlueprintMod
     effects=["make.scenario.blueprint_module_updated"],
 )
 async def apply_update_blueprint_module(ctx, params: ApplyUpdateBlueprintModuleParams) -> ActionResult:
+    """Run the Make.com operation: apply update blueprint module."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id, draft=params.draft)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     current_hash = mc.blueprint_state_hash(blueprint)
     if current_hash != params.expected_state_token:
         return ActionResult.error(
@@ -1171,7 +1217,7 @@ async def apply_update_blueprint_module(ctx, params: ApplyUpdateBlueprintModuleP
             ctx, token, zone, params.scenario_id, blueprint=blueprint, confirmed=params.confirmed,
         )
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         BlueprintModuleUpdateResult(
             scenario_id=params.scenario_id, module_id=params.module_id,
@@ -1198,6 +1244,7 @@ async def apply_update_blueprint_module(ctx, params: ApplyUpdateBlueprintModuleP
     effects=["make.scenario.created"],
 )
 async def create_scenario(ctx, params: CreateScenarioParams) -> ActionResult:
+    """Run the Make.com operation: create scenario."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1209,7 +1256,7 @@ async def create_scenario(ctx, params: CreateScenarioParams) -> ActionResult:
             confirmed=params.confirmed,
         )
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     result = MakeScenario(
         id=str(raw.get("id", "")), title=raw.get("name", params.name),
         scenario_id=int(raw.get("id") or 0), is_active=bool(raw.get("isActive")),
@@ -1229,13 +1276,14 @@ async def create_scenario(ctx, params: CreateScenarioParams) -> ActionResult:
     effects=["make.scenario.deleted"],
 )
 async def delete_scenario(ctx, params: DeleteScenarioParams) -> ActionResult:
+    """Run the Make.com operation: delete scenario."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         did = await mc.delete_scenario(ctx, token, zone, params.scenario_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         DeleteResult(deleted=True, id=str(did)),
         summary=f"Scenario {params.scenario_id} moved to Trash (recoverable for 30 days).",
@@ -1253,13 +1301,14 @@ async def delete_scenario(ctx, params: DeleteScenarioParams) -> ActionResult:
     effects=["make.scenario.restored"],
 )
 async def restore_scenario(ctx, params: RestoreScenarioParams) -> ActionResult:
+    """Run the Make.com operation: restore scenario."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         raw = await mc.restore_scenario(ctx, token, zone, params.scenario_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     result = MakeScenario(
         id=str(raw.get("id", params.scenario_id)), title=raw.get("name", ""),
         scenario_id=int(raw.get("id") or params.scenario_id),
@@ -1279,6 +1328,7 @@ async def restore_scenario(ctx, params: RestoreScenarioParams) -> ActionResult:
     effects=["make.scenario.cloned"],
 )
 async def clone_scenario(ctx, params: CloneScenarioParams) -> ActionResult:
+    """Run the Make.com operation: clone scenario."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1288,7 +1338,7 @@ async def clone_scenario(ctx, params: CloneScenarioParams) -> ActionResult:
             team_id=params.team_id, states=params.keep_states, confirmed=params.confirmed,
         )
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     new_id = raw.get("id") or (raw.get("scenario") or {}).get("id")
     result = MakeScenario(
         id=str(new_id or ""), title=params.name, scenario_id=int(new_id or 0),
@@ -1308,6 +1358,7 @@ async def clone_scenario(ctx, params: CloneScenarioParams) -> ActionResult:
     effects=["make.scenario.scheduling_changed"],
 )
 async def update_scheduling(ctx, params: UpdateSchedulingParams) -> ActionResult:
+    """Run the Make.com operation: update scheduling."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1319,7 +1370,7 @@ async def update_scheduling(ctx, params: UpdateSchedulingParams) -> ActionResult
     try:
         await mc.update_scenario(ctx, token, zone, params.scenario_id, scheduling=scheduling)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         SchedulingResult(scenario_id=params.scenario_id, scheduling_type=params.scheduling_type, interval=params.interval or 0),
         summary=f"Scenario {params.scenario_id} scheduling updated to '{params.scheduling_type}'.",
@@ -1341,13 +1392,14 @@ async def update_scheduling(ctx, params: UpdateSchedulingParams) -> ActionResult
     data_model=BuildtimeVariableList,
 )
 async def list_buildtime_variables(ctx, params: ListBuildtimeVariablesParams) -> ActionResult:
+    """Run the Make.com operation: list buildtime variables."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         raw = await mc.list_buildtime_variables(ctx, token, zone, params.scenario_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     items = [BuildtimeVariable(id=k, title=k, name=k, value=str(v)) for k, v in raw.items()]
     return ActionResult.success(BuildtimeVariableList(items=items, total=len(items), scenario_id=params.scenario_id))
 
@@ -1362,6 +1414,7 @@ async def list_buildtime_variables(ctx, params: ListBuildtimeVariablesParams) ->
     effects=["make.scenario.buildtime_variable_set"],
 )
 async def set_buildtime_variable(ctx, params: SetBuildtimeVariableParams) -> ActionResult:
+    """Run the Make.com operation: set buildtime variable."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1371,7 +1424,7 @@ async def set_buildtime_variable(ctx, params: SetBuildtimeVariableParams) -> Act
             [{"name": params.name, "value": params.value}], create=params.create_new,
         )
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         BuildtimeVariable(id=params.name, title=params.name, name=params.name, value=params.value),
         summary=f"Variable '{params.name}' {'created' if params.create_new else 'updated'}.",
@@ -1388,13 +1441,14 @@ async def set_buildtime_variable(ctx, params: SetBuildtimeVariableParams) -> Act
     effects=["make.scenario.buildtime_variable_deleted"],
 )
 async def delete_buildtime_variable(ctx, params: DeleteBuildtimeVariableParams) -> ActionResult:
+    """Run the Make.com operation: delete buildtime variable."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         await mc.delete_buildtime_variable(ctx, token, zone, params.scenario_id, params.name)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(DeleteResult(deleted=True, id=params.name), summary=f"Variable '{params.name}' deleted.")
 
 
@@ -1407,13 +1461,14 @@ async def delete_buildtime_variable(ctx, params: DeleteBuildtimeVariableParams) 
     data_model=ScenarioUsageReport,
 )
 async def get_scenario_usage(ctx, params: GetScenarioUsageParams) -> ActionResult:
+    """Run the Make.com operation: get scenario usage."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         raw = await mc.get_scenario_usage(ctx, token, zone, params.scenario_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     items = [
         UsageDay(
             id=d.get("date", ""), title=d.get("date", ""), date=d.get("date", ""),
@@ -1442,6 +1497,7 @@ _CODE_TO_STATUS = {1: "success", 2: "warning", 3: "error"}
     data_model=ScenarioExecutionLogList,
 )
 async def list_scenario_logs(ctx, params: ListScenarioLogsParams) -> ActionResult:
+    """Run the Make.com operation: list scenario logs."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1451,7 +1507,7 @@ async def list_scenario_logs(ctx, params: ListScenarioLogsParams) -> ActionResul
             ctx, token, zone, params.scenario_id, status=status_code, limit=params.limit,
         )
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     items = [
         ScenarioExecutionLog(
             id=str(l.get("id", "")), title=f"Run {l.get('id', '')}",
@@ -1480,13 +1536,14 @@ async def list_scenario_logs(ctx, params: ListScenarioLogsParams) -> ActionResul
     data_model=ExecutionDetails,
 )
 async def get_execution_details(ctx, params: GetExecutionDetailsParams) -> ActionResult:
+    """Run the Make.com operation: get execution details."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         raw = await mc.get_execution_details(ctx, token, zone, params.scenario_id, params.execution_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     execution = raw.get("scenarioLog") or raw.get("execution") or raw
     error = execution.get("error") or {}
     result = ExecutionDetails(
@@ -1512,13 +1569,14 @@ async def get_execution_details(ctx, params: GetExecutionDetailsParams) -> Actio
     effects=["make.execution.stopped"],
 )
 async def stop_execution(ctx, params: StopExecutionParams) -> ActionResult:
+    """Run the Make.com operation: stop execution."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         await mc.stop_execution(ctx, token, zone, params.scenario_id, params.execution_id, force=params.force)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         DeleteResult(deleted=True, id=params.execution_id),
         summary=f"Execution {params.execution_id} stopped.",
@@ -1597,13 +1655,14 @@ def _next_module_id(flow: list) -> int:
     data_model=BlueprintModuleAddPreview,
 )
 async def preview_add_blueprint_module(ctx, params: PreviewAddBlueprintModuleParams) -> ActionResult:
+    """Run the Make.com operation: preview add blueprint module."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id, draft=params.draft)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     flow = blueprint.get("flow") or []
     before = len(_flatten_blueprint_modules(flow))
     token_hash = mc.blueprint_state_hash(blueprint)
@@ -1632,13 +1691,14 @@ async def preview_add_blueprint_module(ctx, params: PreviewAddBlueprintModulePar
     effects=["make.scenario.blueprint_module_added"],
 )
 async def apply_add_blueprint_module(ctx, params: ApplyAddBlueprintModuleParams) -> ActionResult:
+    """Run the Make.com operation: apply add blueprint module."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     current_hash = mc.blueprint_state_hash(blueprint)
     if current_hash != params.expected_state_token:
         return ActionResult.error(
@@ -1655,7 +1715,7 @@ async def apply_add_blueprint_module(ctx, params: ApplyAddBlueprintModuleParams)
     try:
         await mc.update_scenario(ctx, token, zone, params.scenario_id, blueprint=blueprint)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         BlueprintModuleAddResult(
             scenario_id=params.scenario_id, new_module_id=new_id,
@@ -1676,13 +1736,14 @@ async def apply_add_blueprint_module(ctx, params: ApplyAddBlueprintModuleParams)
     data_model=BlueprintModuleDeletePreview,
 )
 async def preview_delete_blueprint_module(ctx, params: PreviewDeleteBlueprintModuleParams) -> ActionResult:
+    """Run the Make.com operation: preview delete blueprint module."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id, draft=params.draft)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     flow = blueprint.get("flow") or []
     target = _find_module_in_flow(flow, params.module_id)
     if target is None:
@@ -1717,13 +1778,14 @@ async def preview_delete_blueprint_module(ctx, params: PreviewDeleteBlueprintMod
     effects=["make.scenario.blueprint_module_deleted"],
 )
 async def apply_delete_blueprint_module(ctx, params: ApplyDeleteBlueprintModuleParams) -> ActionResult:
+    """Run the Make.com operation: apply delete blueprint module."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         blueprint = await mc.get_scenario_blueprint(ctx, token, zone, params.scenario_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     current_hash = mc.blueprint_state_hash(blueprint)
     if current_hash != params.expected_state_token:
         return ActionResult.error(
@@ -1742,7 +1804,7 @@ async def apply_delete_blueprint_module(ctx, params: ApplyDeleteBlueprintModuleP
     try:
         await mc.update_scenario(ctx, token, zone, params.scenario_id, blueprint=blueprint)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         BlueprintModuleDeleteResult(
             scenario_id=params.scenario_id, deleted_module_id=params.module_id,
@@ -1769,13 +1831,14 @@ async def apply_delete_blueprint_module(ctx, params: ApplyDeleteBlueprintModuleP
     data_model=MakeOrganizationList,
 )
 async def list_organizations(ctx, params: ListOrganizationsParams) -> ActionResult:
+    """Run the Make.com operation: list organizations."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         raw = await mc.list_organizations(ctx, token, zone)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     items = [
         MakeOrganization(
             id=str(o.get("id", "")), title=o.get("name", ""),
@@ -1798,13 +1861,14 @@ async def list_organizations(ctx, params: ListOrganizationsParams) -> ActionResu
     data_model=TeamMemberList,
 )
 async def list_team_members(ctx, params: ListTeamMembersParams) -> ActionResult:
+    """Run the Make.com operation: list team members."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         raw = await mc.list_team_members(ctx, token, zone, params.team_id)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     items = [
         TeamMember(
             id=str(m.get("id", "")), title=f"User {m.get('userId', '')}",
@@ -1828,13 +1892,14 @@ async def list_team_members(ctx, params: ListTeamMembersParams) -> ActionResult:
     data_model=MakeApiTokenList,
 )
 async def list_api_tokens(ctx, params: ListApiTokensParams) -> ActionResult:
+    """Run the Make.com operation: list api tokens."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         raw = await mc.list_api_tokens(ctx, token, zone)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     items = [
         MakeApiToken(
             id=str(t.get("id", "")), title=t.get("label") or f"Token {t.get('id', '')}",
@@ -1860,13 +1925,14 @@ async def list_api_tokens(ctx, params: ListApiTokensParams) -> ActionResult:
     effects=["make.api_token.created"],
 )
 async def create_api_token(ctx, params: CreateApiTokenParams) -> ActionResult:
+    """Run the Make.com operation: create api token."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         raw = await mc.create_api_token(ctx, token, zone, label=params.label, scope=params.scope)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     result = CreatedApiToken(
         id=str(raw.get("id", "")), title=params.label,
         token=str(raw.get("token", "")),
@@ -1890,13 +1956,14 @@ async def create_api_token(ctx, params: CreateApiTokenParams) -> ActionResult:
     effects=["make.api_token.deleted"],
 )
 async def delete_api_token(ctx, params: DeleteApiTokenParams) -> ActionResult:
+    """Run the Make.com operation: delete api token."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
     try:
         await mc.delete_api_token(ctx, token, zone, params.created_timestamp)
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     return ActionResult.success(
         DeleteResult(deleted=True, id=params.created_timestamp),
         summary=f"API token (created {params.created_timestamp}) deleted.",
@@ -1917,6 +1984,7 @@ async def delete_api_token(ctx, params: DeleteApiTokenParams) -> ActionResult:
     effects=["make.hook.created"],
 )
 async def create_hook(ctx, params: CreateHookParams) -> ActionResult:
+    """Run the Make.com operation: create hook."""
     token, zone = await _get_credentials(ctx)
     if not token or not zone:
         return ActionResult.error("Not connected to Make.com yet.", code="MAKE_NOT_CONNECTED")
@@ -1928,7 +1996,7 @@ async def create_hook(ctx, params: CreateHookParams) -> ActionResult:
             stringify=params.stringify, connection_id=params.connection_id, form_id=params.form_id,
         )
     except mc.ProviderError as exc:
-        return ActionResult.error(str(exc), code=exc.code)
+        return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     result = MakeHook(
         id=str(raw.get("id", "")), title=raw.get("name", params.name),
         hook_id=int(raw.get("id") or 0), type_name=raw.get("typeName", params.type_name),

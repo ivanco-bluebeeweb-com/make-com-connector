@@ -35,9 +35,10 @@ KNOWN_ZONES: list[str] = [
 
 
 class ProviderError(Exception):
-    def __init__(self, message: str, code: str):
+    def __init__(self, message: str, code: str, retryable: bool = False):
         super().__init__(message)
         self.code = code
+        self.retryable = retryable
 
 
 def _headers(token: str) -> dict:
@@ -75,6 +76,16 @@ def _check_status(resp, action: str) -> dict:
               "this action -- edit it in Make: avatar -> Profile -> API tab, "
               "and add the missing scope(s).",
             "MAKE_SCOPE_ERROR",
+        )
+    if resp.status_code == 429:
+        raise ProviderError(
+            f"Make {action} failed: Make's own rate limit was hit (HTTP 429). Try again shortly.",
+            "MAKE_RATE_LIMITED", retryable=True,
+        )
+    if resp.status_code >= 500:
+        raise ProviderError(
+            f"Make {action} failed: Make's server had a problem (HTTP {resp.status_code}).",
+            "MAKE_BACKEND_ERROR", retryable=True,
         )
     if resp.status_code >= 400:
         raise ProviderError(
