@@ -213,7 +213,7 @@ async def test_run_scenario_fails_then_succeeds_on_retry(ctx_connected):
     ctx_connected.http.mock_post("/api/v2/scenarios/42/run", {"detail": "internal error"}, status=500)
     r1 = await h.run_scenario(ctx_connected, RunScenarioParams(scenario_id=42))
     assert r1.error is not None
-    assert r1.error_code == "MAKE_HTTP_ERROR"
+    assert r1.error_code == "MAKE_BACKEND_ERROR"
 
     ctx_connected.http._mocks.clear()
     ctx_connected.http.mock_post("/api/v2/scenarios/42/run", {"executions": [{"id": 999, "status": 1}]}, status=200)

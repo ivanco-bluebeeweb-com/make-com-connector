@@ -1681,7 +1681,9 @@
       "description": "Permanently delete a Make connection. Any scenario using it will stop working once it's gone.",
       "action_type": "destructive",
       "chain_callable": true,
-      "effects": [],
+      "effects": [
+        "delete:make.resource"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -1772,7 +1774,7 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "",
+      "event": "make-com-connector.delete_connection",
       "background": false,
       "long_running": false,
       "scopes": [],
@@ -1783,7 +1785,9 @@
       "description": "Rename a Make connection's display name.",
       "action_type": "write",
       "chain_callable": true,
-      "effects": [],
+      "effects": [
+        "update:make.resource"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -1900,7 +1904,7 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "",
+      "event": "make-com-connector.rename_connection",
       "background": false,
       "long_running": false,
       "scopes": [],
@@ -2174,7 +2178,9 @@
       "description": "Create a new Make data store (key/value storage a scenario can read/write).",
       "action_type": "write",
       "chain_callable": true,
-      "effects": [],
+      "effects": [
+        "update:make.resource"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -2300,7 +2306,7 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "",
+      "event": "make-com-connector.create_data_store",
       "background": false,
       "long_running": false,
       "scopes": [],
@@ -2311,7 +2317,9 @@
       "description": "Permanently delete a Make data store and all of its records.",
       "action_type": "destructive",
       "chain_callable": true,
-      "effects": [],
+      "effects": [
+        "delete:make.resource"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -2402,7 +2410,7 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "",
+      "event": "make-com-connector.delete_data_store",
       "background": false,
       "long_running": false,
       "scopes": [],
@@ -2574,7 +2582,9 @@
       "description": "Enable or disable a Make hook (incoming webhook/mailhook) without deleting it.",
       "action_type": "write",
       "chain_callable": true,
-      "effects": [],
+      "effects": [
+        "update:make.resource"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -2691,7 +2701,7 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "",
+      "event": "make-com-connector.set_hook_enabled",
       "background": false,
       "long_running": false,
       "scopes": [],
@@ -2702,7 +2712,9 @@
       "description": "Permanently remove a Make hook. Any scenario using it will stop working once it's gone.",
       "action_type": "destructive",
       "chain_callable": true,
-      "effects": [],
+      "effects": [
+        "delete:make.resource"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -2793,7 +2805,7 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "",
+      "event": "make-com-connector.delete_hook",
       "background": false,
       "long_running": false,
       "scopes": [],
@@ -2992,7 +3004,9 @@
       "description": "Retry one incomplete (failed) scenario execution after fixing the underlying issue.",
       "action_type": "write",
       "chain_callable": true,
-      "effects": [],
+      "effects": [
+        "update:make.resource"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -3108,7 +3122,7 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "",
+      "event": "make-com-connector.retry_incomplete_execution",
       "background": false,
       "long_running": false,
       "scopes": [],
@@ -3119,7 +3133,9 @@
       "description": "Permanently delete one scenario's incomplete executions -- explicit ids, or all=true to clear every one.",
       "action_type": "destructive",
       "chain_callable": true,
-      "effects": [],
+      "effects": [
+        "delete:make.resource"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -3239,7 +3255,7 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "",
+      "event": "make-com-connector.delete_incomplete_executions",
       "background": false,
       "long_running": false,
       "scopes": [],
@@ -3497,7 +3513,9 @@
       "description": "Permanently delete SEVERAL Make connections at once, by explicit connection ids. Any scenario using one will stop working once it's gone.",
       "action_type": "destructive",
       "chain_callable": true,
-      "effects": [],
+      "effects": [
+        "delete:make.resource"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -3608,7 +3626,7 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "",
+      "event": "make-com-connector.bulk_delete_connections",
       "background": false,
       "long_running": false,
       "scopes": [],
@@ -3619,7 +3637,9 @@
       "description": "Permanently remove SEVERAL Make hooks at once, by explicit hook ids. Any scenario using one will stop working once it's gone.",
       "action_type": "destructive",
       "chain_callable": true,
-      "effects": [],
+      "effects": [
+        "delete:make.resource"
+      ],
       "id_projection": "",
       "params_schema": {
         "properties": {
@@ -3730,7 +3750,7 @@
         "type": "object",
         "x-sdl": "entity"
       },
-      "event": "",
+      "event": "make-com-connector.bulk_delete_hooks",
       "background": false,
       "long_running": false,
       "scopes": [],
