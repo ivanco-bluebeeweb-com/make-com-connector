@@ -199,6 +199,9 @@ async def make_connect_panel(ctx, **kwargs) -> object:
 
     children.append(_scenarios_section(scenarios))
     children.append(ui.Divider())
+    children.append(ui.Button("View scenario overview", variant="primary", size="sm", full_width=True,
+                              icon="LayoutDashboard", on_click=ui.Call("__panel__make_center")))
+    children.append(ui.Divider())
     children.append(_settings_button())
     return ui.Stack(direction="v", gap=4, align="stretch", children=children)
 
@@ -236,7 +239,32 @@ async def make_center_panel(ctx, **kwargs) -> object:
     empty (not a caching issue) until center_overlay=True is set. Text is
     the shared canonical wording -- must stay identical across every app
     in this situation, not app-specific."""
-    return ui.Empty(
-        message="Nothing to show here -- this app is managed entirely from the sidebar.",
-        icon="👈",
-    )
+    from schemas import ListScenariosParams
+    token, zone = await h._get_credentials(ctx)
+    if not (token and zone):
+        return ui.Empty(message="Connect Make.com from the sidebar to see it here.", icon="🧩")
+
+    result = await h.list_scenarios(ctx, ListScenariosParams())
+    body: list[ui.UINode] = [ui.Text("Scenario overview", variant="subtitle")]
+    if result.success and result.data and result.data.items:
+        items = result.data.items
+        active = sum(1 for s in items if s.is_active)
+        paused = sum(1 for s in items if s.is_paused)
+        invalid = sum(1 for s in items if s.is_invalid)
+        body.append(ui.Stats(children=[
+            ui.Stat(label="Total", value=str(len(items))),
+            ui.Stat(label="Active", value=str(active)),
+            ui.Stat(label="Paused", value=str(paused)),
+            ui.Stat(label="Invalid", value=str(invalid)),
+        ]))
+        for s in items[:15]:
+            color = "red" if s.is_invalid else ("green" if s.is_active else "gray")
+            status = "INVALID" if s.is_invalid else ("ACTIVE" if s.is_active else "PAUSED")
+            body.append(ui.Stack(direction="h", gap=2, align="center", children=[
+                ui.Badge(label=status, color=color),
+                ui.Text(s.title, variant="body"),
+            ]))
+    else:
+        body.append(ui.Text("No scenarios found, or no team selected yet.", variant="caption"))
+
+    return ui.Stack(direction="v", gap=3, align="stretch", children=body)
