@@ -49,6 +49,8 @@ class MakeTeam(sdl.Entity):
 
 
 class MakeTeamList(sdl.EntityList[MakeTeam]):
+    id: str = ""
+    title: str = ""
     pass
 
 
@@ -75,6 +77,8 @@ class MakeScenario(sdl.Entity):
 
 
 class MakeScenarioList(sdl.EntityList[MakeScenario]):
+    id: str = ""
+    title: str = ""
     pass
 
 
@@ -190,6 +194,8 @@ class BlueprintModule(sdl.Entity):
 
 
 class BlueprintModuleList(sdl.EntityList[BlueprintModule]):
+    id: str = ""
+    title: str = ""
     scenario_id: int = 0
     scenario_name: str = ""
 
@@ -214,6 +220,8 @@ class MakeConnection(sdl.Entity):
 
 
 class MakeConnectionList(sdl.EntityList[MakeConnection]):
+    id: str = ""
+    title: str = ""
     pass
 
 
@@ -262,6 +270,8 @@ class MakeDataStore(sdl.Entity):
 
 
 class MakeDataStoreList(sdl.EntityList[MakeDataStore]):
+    id: str = ""
+    title: str = ""
     pass
 
 
@@ -299,6 +309,8 @@ class MakeHook(sdl.Entity):
 
 
 class MakeHookList(sdl.EntityList[MakeHook]):
+    id: str = ""
+    title: str = ""
     pass
 
 
@@ -347,6 +359,8 @@ class IncompleteExecution(sdl.Entity):
 
 
 class IncompleteExecutionList(sdl.EntityList[IncompleteExecution]):
+    id: str = ""
+    title: str = ""
     pass
 
 
@@ -516,6 +530,8 @@ class BuildtimeVariable(sdl.Entity):
 
 
 class BuildtimeVariableList(sdl.EntityList[BuildtimeVariable]):
+    id: str = ""
+    title: str = ""
     scenario_id: int = 0
 
 
@@ -545,6 +561,8 @@ class UsageDay(sdl.Entity):
 
 
 class ScenarioUsageReport(sdl.EntityList[UsageDay]):
+    id: str = ""
+    title: str = ""
     scenario_id: int = 0
 
 
@@ -574,6 +592,8 @@ class ScenarioExecutionLog(sdl.Entity):
 
 
 class ScenarioExecutionLogList(sdl.EntityList[ScenarioExecutionLog]):
+    id: str = ""
+    title: str = ""
     scenario_id: int = 0
 
 
@@ -693,6 +713,8 @@ class MakeOrganization(sdl.Entity):
 
 
 class MakeOrganizationList(sdl.EntityList[MakeOrganization]):
+    id: str = ""
+    title: str = ""
     pass
 
 
@@ -715,6 +737,8 @@ class TeamMember(sdl.Entity):
 
 
 class TeamMemberList(sdl.EntityList[TeamMember]):
+    id: str = ""
+    title: str = ""
     team_id: int = 0
 
 
@@ -737,6 +761,8 @@ class MakeApiToken(sdl.Entity):
 
 
 class MakeApiTokenList(sdl.EntityList[MakeApiToken]):
+    id: str = ""
+    title: str = ""
     pass
 
 
