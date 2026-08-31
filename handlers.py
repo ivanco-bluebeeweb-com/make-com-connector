@@ -457,7 +457,7 @@ async def get_outgoing_webhook_status(ctx, params: NoParams) -> ActionResult:
             configured=configured,
             detail="Webhook configured" if configured else "No webhook configured",
         ),
-    )
+    summary="Outgoing webhook status retrieved.")
 
 
 @chat.function(
@@ -614,7 +614,7 @@ async def list_connections(ctx, params: ListConnectionsParams) -> ActionResult:
         )
         for c in raw
     ]
-    return ActionResult.success(MakeConnectionList(items=items, total=len(items)))
+    return ActionResult.success(MakeConnectionList(items=items, total=len(items)), summary="Connections listed.")
 
 
 @chat.function(
@@ -723,7 +723,7 @@ async def list_data_stores(ctx, params: ListDataStoresParams) -> ActionResult:
         )
         for d in raw
     ]
-    return ActionResult.success(MakeDataStoreList(items=items, total=len(items)))
+    return ActionResult.success(MakeDataStoreList(items=items, total=len(items)), summary="Data stores listed.")
 
 
 @chat.function(
@@ -819,7 +819,7 @@ async def list_hooks(ctx, params: ListHooksParams) -> ActionResult:
         )
         for h in raw
     ]
-    return ActionResult.success(MakeHookList(items=items, total=len(items)))
+    return ActionResult.success(MakeHookList(items=items, total=len(items)), summary="Hooks listed.")
 
 
 @chat.function(
@@ -904,7 +904,7 @@ async def list_incomplete_executions(ctx, params: ListIncompleteExecutionsParams
         )
         for e in raw
     ]
-    return ActionResult.success(IncompleteExecutionList(items=items, total=len(items)))
+    return ActionResult.success(IncompleteExecutionList(items=items, total=len(items)), summary="Incomplete executions listed.")
 
 
 @chat.function(
@@ -1401,7 +1401,7 @@ async def list_buildtime_variables(ctx, params: ListBuildtimeVariablesParams) ->
     except mc.ProviderError as exc:
         return ActionResult.error(str(exc), retryable=getattr(exc, "retryable", False), code=exc.code)
     items = [BuildtimeVariable(id=k, title=k, name=k, value=str(v)) for k, v in raw.items()]
-    return ActionResult.success(BuildtimeVariableList(items=items, total=len(items), scenario_id=params.scenario_id))
+    return ActionResult.success(BuildtimeVariableList(items=items, total=len(items), scenario_id=params.scenario_id), summary="Buildtime variables listed.")
 
 
 @chat.function(
@@ -1477,7 +1477,7 @@ async def get_scenario_usage(ctx, params: GetScenarioUsageParams) -> ActionResul
         )
         for d in raw
     ]
-    return ActionResult.success(ScenarioUsageReport(items=items, total=len(items), scenario_id=params.scenario_id))
+    return ActionResult.success(ScenarioUsageReport(items=items, total=len(items), scenario_id=params.scenario_id), summary="Scenario usage retrieved.")
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -1524,7 +1524,7 @@ async def list_scenario_logs(ctx, params: ListScenarioLogsParams) -> ActionResul
     ]
     return ActionResult.success(
         ScenarioExecutionLogList(items=items, total=len(items), scenario_id=params.scenario_id),
-    )
+    summary="Scenario logs listed.")
 
 
 @chat.function(
@@ -1556,7 +1556,7 @@ async def get_execution_details(ctx, params: GetExecutionDetailsParams) -> Actio
         error_module_name=str((error.get("subModule") or {}).get("label", "")) if isinstance(error, dict) else "",
         error_app_name=str((error.get("subModule") or {}).get("app", "")) if isinstance(error, dict) else "",
     )
-    return ActionResult.success(result)
+    return ActionResult.success(result, summary="Execution details retrieved.")
 
 
 @chat.function(
@@ -1848,7 +1848,7 @@ async def list_organizations(ctx, params: ListOrganizationsParams) -> ActionResu
         )
         for o in raw
     ]
-    return ActionResult.success(MakeOrganizationList(items=items, total=len(items)))
+    return ActionResult.success(MakeOrganizationList(items=items, total=len(items)), summary="Organizations listed.")
 
 
 @chat.function(
@@ -1879,7 +1879,7 @@ async def list_team_members(ctx, params: ListTeamMembersParams) -> ActionResult:
         )
         for m in raw
     ]
-    return ActionResult.success(TeamMemberList(items=items, total=len(items), team_id=params.team_id))
+    return ActionResult.success(TeamMemberList(items=items, total=len(items), team_id=params.team_id), summary="Team members listed.")
 
 
 @chat.function(
@@ -1909,7 +1909,7 @@ async def list_api_tokens(ctx, params: ListApiTokensParams) -> ActionResult:
         )
         for t in raw
     ]
-    return ActionResult.success(MakeApiTokenList(items=items, total=len(items)))
+    return ActionResult.success(MakeApiTokenList(items=items, total=len(items)), summary="Api tokens listed.")
 
 
 @chat.function(
